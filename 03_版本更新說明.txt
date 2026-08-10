@@ -1,0 +1,18 @@
+MU Safety Assistant V1.50 RC3
+
+【新增功能】
+- Checkbox 狀態判斷：已勾選的選項不會重複 click。
+- 同一份 Google Form 可重複執行 MU Safety Assistant，不會把第10題既有勾選取消。
+
+【修正內容】
+- 修正第10題「維持工安角色未兼任」第一次勾選、第二次執行卻取消的問題。
+- 保留 RC2「登陸之資料來源」辨識修正。
+- 保留 V1.50 的內建廠區／客戶別與設定功能。
+
+【已知問題】
+- 如果 Google Form 未使用 aria-checked 表示 Checkbox 狀態，個別題目仍可能需要額外適配。
+- 此版仍為 RC 測試版。
+
+【下一版規劃】
+- 實測所有 Checkbox 題目是否可重複執行。
+- 穩定後發布 V1.50 Stable。
