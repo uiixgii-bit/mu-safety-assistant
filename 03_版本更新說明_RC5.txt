@@ -1,0 +1,36 @@
+MU Safety Assistant V1.50 RC5 版本更新說明
+
+版本主題：設定中心 UI
+版本狀態：實機測試通過
+穩定基準：V1.50 RC5
+
+正式發布功能：
+- 設定中心 UI：以右上角浮動面板與 Shadow DOM Modal 集中管理設定，支援 Google Forms、重複開啟及窄畫面操作。
+- 基本資料集中管理：姓名、工號及是否為專案工安主管；只有按下「儲存設定」才寫入。
+- 常用案號管理：支援新增、刪除、trim、轉大寫、空白過濾與去重，並保留三個系統預設案號。
+- 客戶／廠區 Preset：保留華邦、英特格、F22P2、F22P3、鵬鼎及台塑大金等系統內建 Preset。
+- 自訂客戶／廠區：每個自訂客戶可新增多個廠區，可刪除並保存於現有 muSafety.v150 設定物件的 cp 欄位。
+- 填表預設值管理：集中管理工作內容、工班人數、監工人數、工安人數、預設案號及預設客戶／廠區。
+- 清除填表紀錄：只清除 muSafety.v150.rc4History 的日期／歷史資料，保留姓名、工號、案號、自訂客戶／廠區及其他個人設定。
+- 恢復原廠設定：經二次確認後清除 MU Safety Assistant 的個人設定、舊版相容設定與日期紀錄，再次執行時回到全新使用者狀態；系統內建 Preset 仍保留。
+- RC4 日期紀錄沿用：保留上次完成日期提醒、lastCompletedAt，以及補填舊日期不覆蓋較新 lastFormDate 的邏輯。
+- 11-4 Radio／Checkbox 可靠性：click 後重新查找 DOM 並驗證 aria-checked／checked；每隔 200ms 最多 retry 2 次，最終未選取才列入 failure。
+- RC3／RC4 穩定填表核心：保留欄位辨識、登入資料來源、Preset、Checkbox 已勾選不再次取消及填表結果摘要。
+
+LocalStorage 與相容性：
+- muSafety.v150：RC4／RC5 主要設定；自訂客戶／廠區使用同一物件內的 cp 欄位，不新增設定 key。
+- muSafety.v140：舊版設定遷移來源；既有姓名、工號、案號及其他可相容欄位會沿用。
+- muSafety.v150.rc4History：lastFormDate、lastCompletedAt 與填表日期／歷史資料。
+- 升級 RC5 不會清除既有個人設定或日期紀錄；只有使用者主動執行對應清除／恢復功能時才依確認內容刪除。
+- 系統內建客戶／廠區 Preset 與三個系統預設案號存在於程式本身，不屬於單一使用者資料。
+
+正式發布檔案：
+- 01_MU_Safety_Assistant_V1.50_RC5_一鍵安裝.html
+- 02_Bookmarklet_備用手動安裝_RC5.txt
+- 03_版本更新說明_RC5.txt
+- 05_RC5_試用檢查表.txt
+- README.md
+
+已知限制：
+- 設定儲存在目前瀏覽器 LocalStorage，換電腦或瀏覽器不會自動同步。
+- 程式只能確認已完成自動填表，無法確認使用者最後是否按下 Google Form「提交」。
