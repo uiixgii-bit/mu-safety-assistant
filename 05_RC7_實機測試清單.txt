@@ -1,0 +1,43 @@
+MU Safety Assistant V1.50 RC7 Final 實機驗收清單
+
+【實機驗收完成】
+☑ 1. 一般填表流程正常，且 Google Form 不會自動提交。
+☑ 2. 六個固定工作範本及數字 1～6 resolver 正常；systemTemplateOverrides 優先。
+☑ 3. 第 7 題依固定範本 ID 正確連動，在自訂文字後仍不受影響。
+☑ 4. 第 11-1 題依地點正確連動，且自動選取後仍可手動修改。
+☑ 5. 缺失填表將第一筆主要缺失完整寫入 11-3。
+☑ 6. 11-3 缺失性質與缺失類型 radio 均在正確 question container 內選取。
+☑ 7. 只有一筆缺失時，11-4 維持第二筆備用及否／NA／0／今日無缺失預設。
+☑ 8. 常用廠商／人員、責任監工及缺失內容可新增、修改、刪除並保存。
+☑ 9. 缺失內容只出現一次 prompt；編號與直接文字均得到唯一 description。
+☑ 10. 更新今日紀錄可重新讀取 11-3，亦可保存人工填寫的 11-4 第二筆。
+☑ 11. Records Modal 在空資料、有資料、刪除及重繪時均正常。
+☑ 12. Records 在 Google Forms Trusted Types 環境不使用 HTML injection API，特殊字元只以純文字顯示。
+☑ 13. 缺失筆數正確顯示 ✅ 無缺失／⚠️ 1 件／⚠️ 2 件，查看可顯示完整明細。
+☑ 14. primaryDefect 六個欄位完整保存；無第二筆時 secondaryDefect 為 null。
+☑ 15. 夜間加班快捷 7／8 沿用 base template effective content，不改變原 1～6 行為。
+☑ 16. 快捷 7／8 不重問是否夜加，12-1 正確勾選是，12-2 正確填入選定內容。
+☑ 17. Records 正確保存並顯示 nightOvertime=true 與 nightOvertimeContent。
+☑ 18. 同一筆 draft 可同時保存主要缺失與夜間加班資料。
+☑ 19. JSON 匯出包含正規化 defect 欄位、primaryDefect／secondaryDefect 及夜間加班欄位。
+☑ 20. 舊 RC7 單一 defect／無 defect schema 可安全讀取、查看及匯出。
+
+【封版自動回歸】
+□ A. 執行 node --check src/mu-safety-assistant-v1.50-rc7.js。
+□ B. 執行 node tests/rc6-static-check.js，確認 RC5／RC6 regression markers。
+□ C. 執行 node tests/rc7-static-check.js，確認版本、固定 key、範本、migration、雙模式、夜加快捷、records schema 與套件一致性。
+□ D. 執行 node tests/rc7-records-dom-check.js，確認空／有資料、安全文字、缺失明細與夜加內容。
+□ E. 執行 git diff --check，並確認 RC5／RC6 正式檔案未修改。
+
+【每次 Google Form 改版後需重驗】
+□ 1. 題目文字辨識：第 7、8-1、11-1、11-3、11-4、12-1、12-2。
+□ 2. radio／checkbox 實際 aria-checked 狀態及防誤取消行為。
+□ 3. 一般模式 11-4 retry 與無缺失預設。
+□ 4. 缺失模式 11-3 六欄寫入、11-4 第二筆備用及更新今日紀錄。
+□ 5. 快捷 7／8 的 effective content、12-1／12-2 與缺失＋夜加同筆紀錄。
+□ 6. Records Modal 的 Shadow DOM 入口、Trusted Types、安全明細、JSON 匯出及二次確認清除。
+
+【資料保護確認】
+□ 恢復原廠設定只清除個人設定，不刪除 muSafety.v150.rc7Records。
+□ 清除全部工作紀錄必須二次確認。
+□ draft 不代表 Google Form 已提交；完成後仍須人工檢查與送出。
