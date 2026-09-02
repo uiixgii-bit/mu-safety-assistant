@@ -1,0 +1,46 @@
+MU Safety Assistant V1.50 RC7 Final 版本更新說明
+
+【封版狀態】
+- 版本顯示：V1.50 RC7。
+- RC7 已完成一般填表、缺失填表、夜間加班快捷組合與每日工作紀錄實機驗收。
+- 本次 Final 僅整理測試、發行說明與驗收文件，不重新設計或重構已通過流程。
+- RC5、RC6 正式檔案未修改。
+
+【既有功能相容】
+- 完整保留 RC6 的姓名／工號、特殊認證、常用案號、客戶／廠區、自訂廠區、日期紀錄、Checkbox／Radio 防誤取消、11-4 retry、清除填表紀錄及恢復原廠設定。
+- RC6 與早期 RC7 的系統工作情境 ID 會遷移至現行範本；使用者自訂範本不會被刪除或改寫。
+- 個人設定沿用 muSafety.v150；工作紀錄獨立保存於 muSafety.v150.rc7Records。
+
+【工作範本與智慧連動】
+- 六個固定系統範本：一般駐廠工安、駐廠工安＋缺失追蹤、作業主管／工安支援、辦公室文書／入場作業、防護計畫／工程送審資料、工務所作業。
+- 1～3 的第 7 題為在上述廠區，4～5 為辦公室，6 為工務所；自訂範本不擅自修改地點。
+- 第 11-1 題依第 7 題連動：在上述廠區為是，辦公室／工務所為否，其他不自動判斷。
+- 系統範本名稱與 ID 固定，內容可透過 systemTemplateOverrides 覆寫；所有地點連動仍依固定 ID，不受文字修改影響。
+- prompt 輸入 1～6 會解析為目前有效範本文字，不會把數字填入第 8-1 題、工作要項或 draft。
+- 快捷組合 7／8 分別沿用一般駐廠工安／缺失追蹤的有效內容，並直接啟用夜間加班；不新增系統範本 ID 或工作文案。
+
+【一般填表、缺失填表與夜間加班】
+- 一般填表維持既有日期、身分、廠區、案號、工作內容、人數、夜間加班及 11-4 無缺失安全預設流程。
+- 缺失填表將第一筆主要缺失寫入 11-3；11-4 維持第二筆備用及無缺失預設。
+- 缺失資料包含性質、廠商／人員、出工人數、責任監工、缺失類型及簡述；常用缺失內容只詢問一次，編號或直接文字均解析為唯一 description。
+- 「💾 更新今日紀錄」重新讀取 11-3 與人工填寫的 11-4，但不會自動提交 Google Form。
+- 7／8 直接進入夜間加班內容選擇，實際勾選 12-1 為是並填入 12-2；1～6 仍遵循既有夜間加班設定。
+
+【每日工作紀錄與資料安全】
+- 填表後建立 status=draft 的待確認紀錄，不代表 Google Form 已提交；同日期＋案號＋工號會更新原 draft。
+- 紀錄可同時保存 hasDefect、primaryDefect、secondaryDefect、nightOvertime 與 nightOvertimeContent。
+- 舊版單一 defect schema 會安全正規化；無第二筆缺失時 secondaryDefect 為 null。
+- 「我的工作紀錄」顯示最近 30 筆，可查看安全明細、刪除單筆、匯出完整 JSON，或二次確認後清除全部。
+- Records Modal 全程以 createElement、textContent、append／replaceChildren 等安全 DOM API 建立，不使用 HTML injection API，符合 Google Forms Trusted Types 限制。
+- 恢復原廠設定不會刪除 muSafety.v150.rc7Records；只有獨立的「清除全部工作紀錄」會在二次確認後清除紀錄。
+
+【封版自動檢查】
+- JavaScript syntax、RC6 regression、RC7 static、Records DOM/runtime、Bookmarklet／installer／source 一致性及 git diff whitespace 檢查。
+- 靜態檢查固定版本與 LocalStorage key、禁止自動 submit、禁止 debug console 及 HTML injection API。
+- Runtime 檢查空／有資料 Records、Trusted Types、安全文字顯示、缺失 0／1／2 件與夜間加班內容。
+
+【已知限制】
+- 紀錄只保存於目前瀏覽器 LocalStorage；不提供雲端、MUNAS 或跨電腦自動同步。
+- 第一版不提供季報、Excel、PPT、圖表或 JSON 匯入。
+- draft 只代表已執行／更新填表資料，不代表 Google Form 已提交成功；使用者仍須人工檢查並送出。
+- Google Form 題目或選項文字若日後變更，文字辨識連動需重新驗證。
