@@ -1,0 +1,18 @@
+MU Safety Assistant V1.50 RC8.1 版本更新說明
+
+【本次範圍】
+- 新增「📊 工作統計中心」，由右側功能區開啟獨立、可捲動的統計 Modal。
+- 支援本月、上月與 YYYY-MM 自訂月份；所有篩選以 record.date 判斷。
+- 直接唯讀既有 LocalStorage key：muSafety.v150.rc7Records，不建立、不複製、不改寫 Records。
+
+【統計內容】
+- 基本工作統計：工作天數（同日期去重）與紀錄筆數。
+- 工作地點、工作模板（包含未來自訂範本）、夜間加班天數與內容。
+- 缺失工作天數、缺失總件數、無缺失天數、缺失類型、廠商／人員與專案統計。
+- primaryDefect / secondaryDefect 優先；舊 RC7 的 hasDefect、defectType、defectVendor 等欄位會相容推導一件缺失。
+
+【相容與安全】
+- RC5、RC6、RC7 正式檔案保持不變；RC8.1 以獨立安裝檔提供。
+- 不更動 Google Form 填寫流程，也不會自動提交 Google Form。
+- 統計 UI 只使用 createElement、textContent、append 等安全 DOM API。
+- 恢復原廠設定仍保留 muSafety.v150.rc7Records；清除工作紀錄的原有雙重確認不變。
