@@ -1,0 +1,11 @@
+const fs=require('fs');
+const target='src/mu-safety-assistant-v1.50-rc8.3.js';
+const modulePath='src/rc8.3-xlsx-functions.js';
+const start='/* RC8.3_XLSX_START */';
+const end='/* RC8.3_XLSX_END */';
+let source=fs.readFileSync(target,'utf8');
+const block=start+'\n'+fs.readFileSync(modulePath,'utf8').trim()+'\n'+end+'\n';
+const pattern=new RegExp('/\\* RC8\\.3_XLSX_START \\*/[\\s\\S]*?/\\* RC8\\.3_XLSX_END \\*/\\n?');
+source=pattern.test(source)?source.replace(pattern,block):source.replace('function openStatisticsModal()',block+'function openStatisticsModal()');
+source=source.replace('let o=L();panel(o) }catch(e)', 'let o=L();panel(o);installReportButton() }catch(e)');
+fs.writeFileSync(target,source);
