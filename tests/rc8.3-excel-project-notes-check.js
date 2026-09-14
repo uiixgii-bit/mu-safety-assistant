@@ -19,6 +19,17 @@ assert(source.includes("draft.pm=projects.map(x=>({code:x.code,note:x.note}))"),
 assert(source.includes("pj=String(Array.isArray(pj)?pj[0]:pj).trim().toUpperCase()"),'Google Form project value must resolve to the pure project code');
 assert(!/saveRecord\(\{[^}]*projectNote/s.test(source),'Records schema must not receive project notes');
 
+const scrollFn=source.match(/function scrollToFormBottom\(\).*?(?=\nasync function fill)/s)[0];
+let scrollCall=null;
+vm.runInNewContext(`(()=>{${scrollFn};scrollToFormBottom()})()`,{
+ window:{scrollTo:value=>{scrollCall=value}},
+ document:{body:{scrollHeight:1200},documentElement:{scrollHeight:1800}}
+});
+assert.deepStrictEqual(JSON.parse(JSON.stringify(scrollCall)),{top:1800,left:0,behavior:'auto'},'Completed fill must scroll to the Google Form bottom');
+assert(source.includes('`);scrollToFormBottom()}'),'Bottom scroll must run only after the completion alert is dismissed');
+assert(!/\.requestSubmit\s*\(/.test(source),'RC8.3 must never call requestSubmit()');
+assert(!/\.submit\s*\(/.test(source),'RC8.3 must never call submit()');
+
 const stat=source.match(/function defectShape\(d\).*?(?=\nfunction openStatisticsModal)/s)[0];
 const reports=vm.runInNewContext(`(()=>{${stat};return {reportWindow,excelSafe,excelReportData,buildExcelReport}})()`);
 assert.deepStrictEqual(JSON.parse(JSON.stringify(reports.reportWindow('quarter','2026-09'))),{label:'2026 年第 3 季',slug:'2026-Q3',start:'2026-07-01',end:'2026-09-31'});
@@ -39,4 +50,10 @@ for(const label of ['工作天數','工作紀錄筆數','缺失總件數','夜�
 assert(html.includes("'=HYPERLINK(&quot;bad&quot;)"),'Excel formula injection must be neutralized');
 assert(!html.includes('<script>'),'Excel report must escape user content');
 
-console.log('RC8.3 checks passed: project-note migration/display/pure-code isolation, monthly and quarterly Excel ranges, report metrics/detail, and formula-injection safety.');
+const bookmark='javascript:'+encodeURIComponent(source)+';';
+assert.strictEqual(fs.readFileSync('02_Bookmarklet_備用手動安裝_RC8.3.txt','utf8').trim(),bookmark,'RC8.3 backup bookmarklet must match source');
+const installer=fs.readFileSync('01_MU_Safety_Assistant_V1.50_RC8.3_一鍵安裝.html','utf8');
+const href=installer.match(/class="install" href="([^"]+)"/)[1].replaceAll('&amp;','&').replaceAll('&#x27;',"'").replaceAll('&quot;','"');
+assert.strictEqual(href,bookmark,'RC8.3 installer bookmarklet must match source');
+
+console.log('RC8.3 checks passed: project notes/pure-code isolation, reports, bottom-scroll without submit, and package parity.');
