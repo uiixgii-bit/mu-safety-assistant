@@ -3,11 +3,28 @@ const fs=require('fs');
 const vm=require('vm');
 
 const source=fs.readFileSync('src/mu-safety-assistant-v1.50-rc8.3.js','utf8');
-assert(source.includes("v:'V1.50 RC8.3 XLSX Hotfix 2'"),'RC8.3 XLSX hotfix marker is required');
+assert(source.includes("v:'V1.50 RC8.3 XLSX Hotfix 3'"),'RC8.3 XLSX UI hotfix marker is required');
 assert(source.includes("rk:'muSafety.v150.rc7Records'"),'RC8.3 must retain the RC7 Records key');
 for(const key of [...source.matchAll(/muSafety\.v150\.[A-Za-z0-9.]*Records/g)].map(x=>x[0]))assert.strictEqual(key,'muSafety.v150.rc7Records',`Unexpected Records key: ${key}`);
 for(const marker of ['📊 工作統計中心','🔎 搜尋／篩選','data-new-note','備註／廠區／工程名稱（可留空）'])assert(source.includes(marker),`Missing RC8.3 marker: ${marker}`);
 assert(!source.includes('匯出月報 Excel')&&!source.includes('匯出季報 Excel'),'RC8.1 statistics center must not contain report export controls');
+const statisticsUi=source.match(/function openStatisticsModal\(\).*?(?=\nfunction recordHasDefect)/s)[0];
+assert(!statisticsUi.includes('downloadXlsxReport')&&!statisticsUi.includes('openReportCenter'),'RC8.1 statistics center must remain statistics-only');
+const mainPanel=source.match(/function panel\(o\).*?(?=\nlet o=L\(\))/s)[0];
+assert(mainPanel.includes("btn('📊 工作統計中心',0)"),'Main menu must retain RC8.1 statistics button');
+assert(mainPanel.includes("btn('📊 報表輸出中心',0)"),'Main menu must directly create the report center button');
+assert(mainPanel.includes("reports.setAttribute('data-action','open-reports')"),'Report center button needs an independent main-menu action');
+assert(mainPanel.includes('reports.onclick=e=>{e.preventDefault();e.stopPropagation();openReportCenter()}'),'Report center button must directly open the independent report window');
+assert(!source.includes('installReportButton'),'Post-render report-button injection must not be used');
+class FakeNode{constructor(tag){this.tag=tag;this.children=[];this.style={};this.attributes={};this.textContent='';this.onclick=null}append(...nodes){this.children.push(...nodes)}appendChild(node){this.children.push(node);return node}setAttribute(k,v){this.attributes[k]=v}addEventListener(){}remove(){}closest(){return null}}
+const body=new FakeNode('body'),uiState={openedReports:0};
+vm.runInNewContext(`(()=>{const A={id:'mu150'};const document={getElementById:()=>null,createElement:t=>new FakeNode(t),body};const fill=()=>{},L=()=>({}),cfg=()=>{},updateCurrentDraft=()=>({ok:true}),openStatisticsModal=()=>{},openRecordsModal=()=>{},showRecordsError=()=>{},st=()=>null,alert=()=>{},confirm=()=>false;function openReportCenter(){uiState.openedReports++}${source.match(/function btn\(t,p=1\).*?(?=\nfunction panel)/s)[0]}${mainPanel};panel({});return 0})()`,{FakeNode,body,uiState});
+const menuButtons=body.children[0].children.filter(node=>node.tag==='button');
+assert(menuButtons.some(node=>node.textContent==='📊 工作統計中心'),'Rendered main menu must contain statistics center');
+const renderedReport=menuButtons.find(node=>node.textContent==='📊 報表輸出中心');
+assert(renderedReport,'Rendered main menu must contain the independent report center');
+renderedReport.onclick({preventDefault(){},stopPropagation(){}});
+assert.strictEqual(uiState.openedReports,1,'Rendered report button must open the independent report center');
 
 const projectFns=source.match(/normalizeProjects=.*?(?=,PR=o=>)/s)[0];
 const projects=vm.runInNewContext(`(()=>{const SP=['P260305300','P240508000','P250704500'];const ${projectFns};return {normalizeProjects,projectLabel}})()`);
@@ -71,7 +88,7 @@ assert.strictEqual(JSON.stringify(records),snapshot,'Report generation must not 
 const bookmark='javascript:'+encodeURIComponent(source)+';';
 assert.strictEqual(fs.readFileSync('02_Bookmarklet_備用手動安裝_RC8.3.txt','utf8').trim(),bookmark,'RC8.3 backup bookmarklet must match source');
 const installer=fs.readFileSync('01_MU_Safety_Assistant_V1.50_RC8.3_一鍵安裝.html','utf8');
-assert(installer.includes('XLSX Hotfix 2'),'Installer must visibly distinguish this build from stale RC8.3 bookmarks');
+assert(installer.includes('XLSX Hotfix 3'),'Installer must visibly distinguish this build from stale RC8.3 bookmarks');
 const href=installer.match(/class="install" href="([^"]+)"/)[1].replaceAll('&amp;','&').replaceAll('&#x27;',"'").replaceAll('&quot;','"');
 assert.strictEqual(href,bookmark,'RC8.3 installer bookmarklet must match source');
 const installedSource=decodeURIComponent(href.slice('javascript:'.length,-1));

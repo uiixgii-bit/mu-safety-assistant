@@ -8,10 +8,10 @@ const bookmark='javascript:'+encodeURIComponent(source)+';';
 fs.writeFileSync(backupPath,bookmark+'\n');
 const escaped=bookmark.replaceAll('&','&amp;').replaceAll("'",'&#x27;').replaceAll('"','&quot;');
 const installer=fs.readFileSync(installerPath,'utf8');
+if(!/<a class="install" href="[^"]+"[^>]*>/.test(installer))throw new Error('RC8.3 installer bookmark link was not found');
 const updated=installer
   .replace(/(<a class="install" href=")[^"]+("[^>]*>)/,`$1${escaped}$2`)
-  .replaceAll('MU Safety Assistant V1.50 RC8.3</h1>','MU Safety Assistant V1.50 RC8.3 XLSX Hotfix 2</h1>')
-  .replaceAll('>MU Safety V1.50 RC8.3</a>','>MU Safety V1.50 RC8.3 XLSX Hotfix 2</a>')
-  .replace(/<div class="note">[\s\S]*?<\/div>/,'<div class="note"><b>RC8.3 XLSX Hotfix 2：</b><br>• 請先刪除舊 RC8.3 書籤，再拖曳本頁的新書籤。<br>• RC8.1「📊 工作統計中心」保留統計功能。<br>• RC8.3 另設「📊 報表輸出中心」，只輸出真正的 ZIP/OOXML .xlsx。<br>• 每份工作簿包含「統計摘要」與「工作明細」。<br>• 不修改 Records schema、不上傳資料、不自動提交 Google Form。</div>');
-if(updated===installer)throw new Error('RC8.3 installer bookmark link was not found');
+  .replace(/MU Safety Assistant V1\.50 RC8\.3(?: XLSX Hotfix 2)?<\/h1>/,'MU Safety Assistant V1.50 RC8.3 XLSX Hotfix 3</h1>')
+  .replace(/>MU Safety V1\.50 RC8\.3(?: XLSX Hotfix 2)?<\/a>/,'>MU Safety V1.50 RC8.3 XLSX Hotfix 3</a>')
+  .replace(/<div class="note">[\s\S]*?<\/div>/,'<div class="note"><b>RC8.3 XLSX Hotfix 3：</b><br>• 請先刪除舊 RC8.3 書籤，再拖曳本頁的新書籤。<br>• 右側主選單直接包含「📊 工作統計中心」與獨立的「📊 報表輸出中心」。<br>• 工作統計中心只保留 RC8.1 統計功能；月報與季報只從報表輸出中心匯出。<br>• 報表為真正 ZIP/OOXML .xlsx，包含「統計摘要」與「工作明細」。<br>• 不修改 Records schema、不上傳資料、不自動提交 Google Form。</div>');
 fs.writeFileSync(installerPath,updated);
