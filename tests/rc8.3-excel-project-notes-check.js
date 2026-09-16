@@ -3,10 +3,11 @@ const fs=require('fs');
 const vm=require('vm');
 
 const source=fs.readFileSync('src/mu-safety-assistant-v1.50-rc8.3.js','utf8');
-assert(source.includes("v:'V1.50 RC8.3'"),'RC8.3 version marker is required');
+assert(source.includes("v:'V1.50 RC8.3 XLSX Hotfix 2'"),'RC8.3 XLSX hotfix marker is required');
 assert(source.includes("rk:'muSafety.v150.rc7Records'"),'RC8.3 must retain the RC7 Records key');
 for(const key of [...source.matchAll(/muSafety\.v150\.[A-Za-z0-9.]*Records/g)].map(x=>x[0]))assert.strictEqual(key,'muSafety.v150.rc7Records',`Unexpected Records key: ${key}`);
-for(const marker of ['📊 工作統計中心','🔎 搜尋／篩選','匯出月報 Excel','匯出季報 Excel','data-new-note','備註／廠區／工程名稱（可留空）'])assert(source.includes(marker),`Missing RC8.3 marker: ${marker}`);
+for(const marker of ['📊 工作統計中心','🔎 搜尋／篩選','data-new-note','備註／廠區／工程名稱（可留空）'])assert(source.includes(marker),`Missing RC8.3 marker: ${marker}`);
+assert(!source.includes('匯出月報 Excel')&&!source.includes('匯出季報 Excel'),'RC8.1 statistics center must not contain report export controls');
 
 const projectFns=source.match(/normalizeProjects=.*?(?=,PR=o=>)/s)[0];
 const projects=vm.runInNewContext(`(()=>{const SP=['P260305300','P240508000','P250704500'];const ${projectFns};return {normalizeProjects,projectLabel}})()`);
@@ -31,7 +32,8 @@ assert(!/\.requestSubmit\s*\(/.test(source),'RC8.3 must never call requestSubmit
 assert(!/\.submit\s*\(/.test(source),'RC8.3 must never call submit()');
 
 for(const marker of ['📊 報表輸出中心','統計摘要','工作明細','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','.xlsx'])assert(source.includes(marker),`Missing XLSX report marker: ${marker}`);
-assert(!source.includes(".xls'"),'Legacy .xls download must be removed');
+assert(!source.includes('application/vnd.ms-excel'),'Legacy HTML-as-XLS MIME must be removed');
+assert(!/\.xls(?:["'`]|$)/m.test(source),'Legacy .xls filename must be removed');
 assert(source.includes("if(!result.data.selected.length)return alert('此期間沒有工作紀錄')"),'Empty periods must alert without creating a download');
 for(const forbidden of ['innerHTML','outerHTML','insertAdjacentHTML','document.write'])assert(!source.includes(forbidden),`Forbidden DOM API: ${forbidden}`);
 
@@ -69,7 +71,11 @@ assert.strictEqual(JSON.stringify(records),snapshot,'Report generation must not 
 const bookmark='javascript:'+encodeURIComponent(source)+';';
 assert.strictEqual(fs.readFileSync('02_Bookmarklet_備用手動安裝_RC8.3.txt','utf8').trim(),bookmark,'RC8.3 backup bookmarklet must match source');
 const installer=fs.readFileSync('01_MU_Safety_Assistant_V1.50_RC8.3_一鍵安裝.html','utf8');
+assert(installer.includes('XLSX Hotfix 2'),'Installer must visibly distinguish this build from stale RC8.3 bookmarks');
 const href=installer.match(/class="install" href="([^"]+)"/)[1].replaceAll('&amp;','&').replaceAll('&#x27;',"'").replaceAll('&quot;','"');
 assert.strictEqual(href,bookmark,'RC8.3 installer bookmarklet must match source');
+const installedSource=decodeURIComponent(href.slice('javascript:'.length,-1));
+assert(installedSource.includes("link.download='MU-Safety-'+(kind==='quarter'?'季報-':'月報-')+result.data.period.slug+'.xlsx'"),'Installed bookmarklet must download .xlsx');
+assert(installedSource.includes("new Blob([result.bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})"),'Installed bookmarklet must package OOXML bytes, not HTML');
 
 console.log('RC8.3 checks passed: project notes/pure-code isolation, reports, bottom-scroll without submit, and package parity.');

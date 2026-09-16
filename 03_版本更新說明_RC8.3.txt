@@ -1,4 +1,10 @@
-MU Safety Assistant V1.50 RC8.3 版本更新說明
+MU Safety Assistant V1.50 RC8.3 XLSX Hotfix 2 版本更新說明
+
+【本次實機回歸修正】
+- 移除 RC8.1「工作統計中心」內容易與舊版混淆的報表匯出按鈕；原統計功能完整保留。
+- RC8.3 報表統一從獨立「📊 報表輸出中心」匯出。
+- 匯出內容為 ZIP/OOXML 結構的真正 .xlsx，不是 HTML table，也不是只更改副檔名。
+- 安裝後面板顯示「V1.50 RC8.3 XLSX Hotfix 2」，可確認不是舊書籤。
 
 【回歸修正】
 - 恢復一鍵填表完成並關閉完成提示後，自動捲動至 Google Form 最下方提交區域。
@@ -23,8 +29,7 @@ MU Safety Assistant V1.50 RC8.3 版本更新說明
 - Excel 匯出只讀工作紀錄，不會修改或刪除 Records。
 - 系統不會自動提交 Google Form，仍須人工確認後送出。
 
-【已知問題】
-- Excel 報表使用 Excel 相容的 .xls 格式；首次開啟時，部分 Excel 版本可能顯示格式提示，確認開啟即可。
+【已知限制】
 - 工作紀錄與案號備註仍保存在目前瀏覽器的 LocalStorage。
 
 【下一版規劃】
