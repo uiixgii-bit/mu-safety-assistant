@@ -1,0 +1,8 @@
+MU Safety Assistant V1.50 RC8.4 試作版
+
+1. 在 LINE 收到 ZIP 後，請先下載並解壓縮。
+2. 用 Chrome 開啟「01_MU_Safety_Assistant_V1.50_RC8.4_試作版_一鍵安裝.html」。
+3. 把頁面中的藍色「MU Safety V1.50 RC8.4 試作版」按鈕拖到書籤列。
+4. 開啟 Google Form 後點擊此書籤即可測試。
+
+請勿直接在 LINE 內建瀏覽器執行安裝頁。
