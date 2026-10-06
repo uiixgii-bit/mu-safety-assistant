@@ -1,0 +1,25 @@
+MU Safety Assistant V1.50 RC8.4 試作版
+
+一、本次新增
+1. 工作內容範本第 4 項改為「辦公室／文書作業」。
+2. 工作內容範本第 5 項改為「工務所／文書作業」。
+3. 選擇 4 或 5 時，額外詢問「今天主要做什麼文書作業？」。
+4. 上次輸入的文書內容保存在既有 muSafety.v150 設定中，下次自動預帶。
+5. 每日 Record 新增 documentWork 字串欄位，保存當天實際使用內容的快照。
+6. Excel「工作明細」新增「文書作業內容」欄位。
+7. Excel「統計摘要」新增「重要文書／專案成果」，相同名稱依不同日期合併工作日數。
+
+二、相容性
+1. Records 仍使用 muSafety.v150.rc7Records，未更換 key。
+2. 舊 Record 缺少 documentWork 時，以空白顯示，不改寫舊資料。
+3. muSafety.v150 舊設定會自動補上 lastDocumentWork 空字串。
+4. Google Form 只填「辦公室／文書作業」或「工務所／文書作業」，不填入詳細文書名稱。
+
+三、保留功能
+RC8.1 工作統計中心、RC8.2 搜尋／篩選、RC8.3 報表輸出中心、真正 OOXML .xlsx、常用案號備註、缺失、夜間加班、一般填表及完成後捲至表單底部均保留。
+
+四、安全限制
+不呼叫 submit() 或 requestSubmit()；最終仍由使用者人工按 Google Form「提交」。
+未使用 innerHTML、outerHTML、insertAdjacentHTML 或 document.write。
+
+本版為 RC8.4 試作版，供實機驗收；尚未合併 main。
