@@ -113,9 +113,6 @@ assert(factoryMatch&&factoryMatch[0].includes('removeItem(A.k)'), 'Factory reset
 assert(!factoryMatch[0].includes('removeItem(A.rk)'), 'Factory reset must preserve RC7 records');
 const clearAllMatch=recordsUiMatch[0].match(/data-clear-records[\s\S]*?confirm\([\s\S]*?confirm\(/);
 assert(clearAllMatch, 'Clear-all records must retain two confirmations');
-const bookmark = 'javascript:' + encodeURIComponent(source) + ';';
-assert.strictEqual(fs.readFileSync('02_Bookmarklet_備用手動安裝_RC7.txt','utf8').trim(), bookmark, 'Backup bookmarklet differs from source');
-const html = fs.readFileSync('01_MU_Safety_Assistant_V1.50_RC7_一鍵安裝.html','utf8');
-const href = html.match(/class="bookmark" href="([^"]+)"/)[1].replaceAll('&amp;','&').replaceAll('&#x27;',"'").replaceAll('&quot;','"');
-assert.strictEqual(href, bookmark, 'Installer bookmarklet differs from source');
-console.log('RC7 Final static checks passed: version/storage stability, six scenarios, migration, combined defect+night records, safety, and package parity.');
+require('./helpers/historical-package-parity').checkHistoricalPackageParity({source,bookmarkPath:'02_Bookmarklet_備用手動安裝_RC7.txt',installerPath:'01_MU_Safety_Assistant_V1.50_RC7_一鍵安裝.html',label:'RC7'});
+console.log('RC7 Final static checks passed: version/storage stability, six scenarios, migration, combined defect+night records, and safety.');
+

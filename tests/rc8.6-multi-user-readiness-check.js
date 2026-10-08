@@ -1,0 +1,27 @@
+const assert=require('assert');
+const fs=require('fs');
+const vm=require('vm');
+const source=fs.readFileSync('src/mu-safety-assistant-v1.50-rc8.6.js','utf8').trim();
+assert(source.includes("v:'V1.50 RC8.6 試作版'"));
+assert(source.includes('P=[],SP=[]'),'A: built-in customer/site/project lists must be empty');
+for(let personal of ['華邦','英特格','台積電','鵬鼎科技','台塑大金','P260305300','P240508000','P250704500'])assert(!source.includes(personal),`A/E: personal default leaked: ${personal}`);
+const moduleSource=fs.readFileSync('src/rc8.6-onboarding-functions.js','utf8');
+class Storage{constructor(data={}){this.data={...data}}getItem(k){return Object.hasOwn(this.data,k)?this.data[k]:null}setItem(k,v){this.data[k]=String(v)}removeItem(k){delete this.data[k]}}
+const api=vm.runInNewContext(`(()=>{const A={k:'muSafety.v150',old:'muSafety.v140'},C=o=>JSON.parse(JSON.stringify(o)),st=()=>null;${moduleSource};return{hasStoredUserSettings,firstSetupValues}})()`,{JSON,String,Error,Object,Array});
+assert.strictEqual(api.hasStoredUserSettings(new Storage()),false,'A: blank environment must enter onboarding');
+assert.strictEqual(api.hasStoredUserSettings(new Storage({'muSafety.v150':'{}'})),true,'D: RC8.5 settings must skip onboarding');
+assert.strictEqual(api.hasStoredUserSettings(new Storage({'muSafety.v140':'{}'})),true,'D: legacy settings must skip onboarding');
+const defaults={n:'',e:'',p:[],pm:[],cp:[],lp:'',lf:'',ct:[],lastDocumentWork:''},snapshot=JSON.stringify(defaults);
+const configured=api.firstSetupValues(defaults,{name:' 王小明 ',employee:' e1234 ',client:'客戶甲',site:'一廠',project:' p260001 '});
+assert.strictEqual(JSON.stringify(defaults),snapshot,'B: onboarding must not mutate its input');
+assert.deepStrictEqual(JSON.parse(JSON.stringify(configured)),{...defaults,n:'王小明',e:'E1234',p:['P260001'],pm:[{code:'P260001',note:''}],cp:[{c:'客戶甲',s:['一廠']}],lp:'P260001',lf:'客戶甲 → 一廠'});
+assert.throws(()=>api.firstSetupValues(defaults,{name:'',employee:'E1'}),/姓名/);assert.throws(()=>api.firstSetupValues(defaults,{name:'王',employee:''}),/員工編號/);assert.throws(()=>api.firstSetupValues(defaults,{name:'王',employee:'E1',site:'一廠'}),/主要客戶/);
+const minimal=api.firstSetupValues(defaults,{name:'王',employee:'E1'});assert.deepStrictEqual(JSON.parse(JSON.stringify(minimal.cp)),[]);assert.deepStrictEqual(JSON.parse(JSON.stringify(minimal.p)),[],'B: optional fields may be deferred');
+for(let marker of ['data-add-client','data-add-site','data-new-note','draft.p=projects.map(x=>x.code)','draft.pm=projects.map(x=>({code:x.code,note:x.note}))'])assert(source.includes(marker),`C: missing editable setting marker ${marker}`);
+assert(source.includes("let existed=hasStoredUserSettings(),o=L();panel(o);if(!existed)openFirstSetup(o)"),'D: onboarding gate must preserve existing settings');
+for(let key of ["k:'muSafety.v150'","rk:'muSafety.v150.rc7Records'","h:'muSafety.v150.rc4History'","old:'muSafety.v140'"])assert(source.includes(key),`Missing storage key ${key}`);
+for(let marker of ['MU_BACKUP_FORMAT','muMergeRecords','documentWork','重要文書／專案成果','📊 工作統計中心','🔎 搜尋／篩選','📊 報表輸出中心','scrollToFormBottom'])assert(source.includes(marker),`F-I: missing regression marker ${marker}`);
+for(let forbidden of ['innerHTML','outerHTML','insertAdjacentHTML','document.write','localStorage.clear()','.requestSubmit(','.submit('])assert(!source.includes(forbidden),`Forbidden API: ${forbidden}`);
+const bookmark='javascript:'+encodeURIComponent(source)+';';assert.strictEqual(fs.readFileSync('02_Bookmarklet_備用手動安裝_RC8.6.txt','utf8').trim(),bookmark,'J: Bookmarklet mismatch');
+const installer=fs.readFileSync('01_MU_Safety_Assistant_V1.50_RC8.6_試作版_一鍵安裝.html','utf8'),href=installer.match(/class="install" href="([^"]+)"/)[1].replaceAll('&amp;','&').replaceAll('&#x27;',"'").replaceAll('&quot;','"');assert.strictEqual(href,bookmark,'J: installer mismatch');
+console.log('RC8.6 checks passed: clean defaults, onboarding, upgrade preservation, storage compatibility, regressions, and package parity.');

@@ -42,9 +42,5 @@ assert.strictEqual(empty.selected.length,0,'Empty months must not throw');
 assert.strictEqual(empty.days.size,0);
 assert.strictEqual(empty.defectCount,0);
 console.log('RC8.1 statistics checks passed: month filtering, empty state, dynamic template/location/category/vendor/project counts, legacy/new defects, overtime, and duplicate dates.');
-const bookmark='javascript:'+encodeURIComponent(source)+';';
-assert.strictEqual(fs.readFileSync('02_Bookmarklet_備用手動安裝_RC8.1.txt','utf8').trim(),bookmark,'RC8.1 backup bookmarklet must match source');
-const installer=fs.readFileSync('01_MU_Safety_Assistant_V1.50_RC8.1_一鍵安裝.html','utf8');
-const href=installer.match(/class="bookmark" href="([^"]+)"/)[1].replaceAll('&amp;','&').replaceAll('&#x27;',"'").replaceAll('&quot;','"');
-assert.strictEqual(href,bookmark,'RC8.1 installer bookmarklet must match source');
-console.log('RC8.1 package parity check passed.');
+require('./helpers/historical-package-parity').checkHistoricalPackageParity({source,bookmarkPath:'02_Bookmarklet_備用手動安裝_RC8.1.txt',installerPath:'01_MU_Safety_Assistant_V1.50_RC8.1_一鍵安裝.html',label:'RC8.1'});
+

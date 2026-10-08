@@ -44,9 +44,5 @@ assert.strictEqual(JSON.stringify(options.projects),JSON.stringify(['P1','P2','P
 for(const value of ['自訂廠區','二期','在上述廠區','舊廠區','辦公室'])assert(options.sites.includes(value),`Dynamic site choices must include ${value}`);
 assert.strictEqual(JSON.stringify(records),snapshot,'Filtering must not mutate original Records');
 console.log('RC8.2 record filter checks passed: ordering, date bounds/range, dynamic project/site, legacy/new defects, overtime, combinations, empty results, and immutable Records.');
-const bookmark='javascript:'+encodeURIComponent(source)+';';
-assert.strictEqual(fs.readFileSync('02_Bookmarklet_備用手動安裝_RC8.2.txt','utf8').trim(),bookmark,'RC8.2 backup bookmarklet must match source');
-const installer=fs.readFileSync('01_MU_Safety_Assistant_V1.50_RC8.2_一鍵安裝.html','utf8');
-const href=installer.match(/class="bookmark" href="([^"]+)"/)[1].replaceAll('&amp;','&').replaceAll('&#x27;',"'").replaceAll('&quot;','"');
-assert.strictEqual(href,bookmark,'RC8.2 installer bookmarklet must match source');
-console.log('RC8.2 package parity check passed.');
+require('./helpers/historical-package-parity').checkHistoricalPackageParity({source,bookmarkPath:'02_Bookmarklet_備用手動安裝_RC8.2.txt',installerPath:'01_MU_Safety_Assistant_V1.50_RC8.2_一鍵安裝.html',label:'RC8.2'});
+

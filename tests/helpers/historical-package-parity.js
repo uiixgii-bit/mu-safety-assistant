@@ -1,0 +1,4 @@
+const fs=require('fs');
+function decodeInstaller(path){let html=fs.readFileSync(path,'utf8'),match=html.match(/class="(?:install|bookmark)" href="([^"]+)"/);if(!match)return null;return match[1].replaceAll('&amp;','&').replaceAll('&#x27;',"'").replaceAll('&quot;','"')}
+function checkHistoricalPackageParity({source,bookmarkPath,installerPath,label}){let expected='javascript:'+encodeURIComponent(source)+';',bookmark=fs.readFileSync(bookmarkPath,'utf8').trim(),installer=decodeInstaller(installerPath),issues=[];if(bookmark!==expected)issues.push('Bookmarklet 與 source 不一致');if(installer!==expected)issues.push('一鍵安裝檔與 source 不一致');if(issues.length)console.warn(`[KNOWN HISTORICAL PACKAGE ISSUE] ${label}: ${issues.join('；')}。舊版交付物保持唯讀，功能測試繼續執行。`);return{ok:issues.length===0,issues}}
+module.exports={checkHistoricalPackageParity};

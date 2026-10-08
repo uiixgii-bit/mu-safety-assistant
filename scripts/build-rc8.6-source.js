@@ -1,0 +1,12 @@
+const fs=require('fs');
+const sourcePath='src/mu-safety-assistant-v1.50-rc8.5.js';
+const targetPath='src/mu-safety-assistant-v1.50-rc8.6.js';
+const modulePath='src/rc8.6-onboarding-functions.js';
+let source=fs.readFileSync(sourcePath,'utf8');
+const block='/* RC8.6_ONBOARDING_START */\n'+fs.readFileSync(modulePath,'utf8').trim()+'\n/* RC8.6_ONBOARDING_END */\n';
+source=source.replace("v:'V1.50 RC8.5 試作版'","v:'V1.50 RC8.6 試作版'");
+source=source.replace(/P=\[ \['華邦'[\s\S]*?\]\],SP=\['P260305300','P240508000','P250704500'\]/,"P=[],SP=[]");
+source=source.replace('function cfg(o)',block+'function cfg(o)');
+source=source.replace('let o=L();panel(o)',"let existed=hasStoredUserSettings(),o=L();panel(o);if(!existed)openFirstSetup(o)");
+if(!source.includes('RC8.6_ONBOARDING_START')||!source.includes("P=[],SP=[]")||!source.includes('if(!existed)openFirstSetup(o)'))throw new Error('RC8.6 injection failed');
+fs.writeFileSync(targetPath,source);
