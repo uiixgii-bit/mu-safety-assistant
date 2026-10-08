@@ -1,0 +1,12 @@
+const fs=require('fs');
+const sourcePath='src/mu-safety-assistant-v1.50-rc8.4.js';
+const targetPath='src/mu-safety-assistant-v1.50-rc8.5.js';
+const modulePath='src/rc8.5-backup-functions.js';
+let source=fs.readFileSync(sourcePath,'utf8');
+const block='/* RC8.5_BACKUP_START */\n'+fs.readFileSync(modulePath,'utf8').trim()+'\n/* RC8.5_BACKUP_END */\n';
+source=source.replace("v:'V1.50 RC8.4 試作版'","v:'V1.50 RC8.5 試作版'");
+source=source.replace('function cfg(o)',block+'function cfg(o)');
+source=source.replace("let info=fs('七、系統資訊');","let backup=muBackupSettingsSection(E,add,fs);let info=fs('八、系統資訊');");
+source=source.replace('habits,defectSettings,info,actions','habits,defectSettings,backup,info,actions');
+if(!source.includes('RC8.5_BACKUP_START')||!source.includes('資料備份／還原')||!source.includes('defectSettings,backup,info'))throw new Error('RC8.5 injection failed');
+fs.writeFileSync(targetPath,source);
