@@ -1,0 +1,32 @@
+name: RC8.6 Isolated Tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - release/rc8.6
+    paths:
+      - 'tests/rc8.6-settings-restore-check.js'
+      - 'src/mu-safety-assistant-v1.50-rc8.6.js'
+      - '.github/workflows/rc8.6-isolated-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  settings-restore-isolation:
+    name: Settings restore isolation check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out RC8.6 branch
+        uses: actions/checkout@v4
+        with:
+          ref: release/rc8.6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run isolated settings restore test
+        run: node tests/rc8.6-settings-restore-check.js
