@@ -24,10 +24,11 @@ const {chromium}=require('playwright');
  console.log('BROWSER PASS settings customer/site/project add and save');
  // Upgrade preservation uses fictional RC8.5 storage; opening RC8.6 must not write it.
  const records=[{id:'legacy-test',date:'2026-09-01',projectId:'TEST01',employeeId:'TEST01',status:'draft'}];
- await page.evaluate(({rk,records})=>localStorage.setItem(rk,JSON.stringify(records)),{rk,records});
+ await page.evaluate(({rk,records,key})=>{localStorage.setItem(rk,JSON.stringify(records));let o=JSON.parse(localStorage.getItem(key));o.cp=[];o.lf='歷史客戶 → 歷史廠區';localStorage.setItem(key,JSON.stringify(o))},{rk,records,key});
  const before=await page.evaluate(()=>({...localStorage}));await page.reload();await run();assert.strictEqual(await onboarding.count(),0);assert.deepStrictEqual(await page.evaluate(()=>({...localStorage})),before);
  await page.getByRole('button',{name:'📋 我的工作紀錄',exact:true}).click();assert((await page.locator('#muSafetyAssistantV150RC8RecordsHost').getByText('2026-09-01',{exact:true}).count())>=1);await page.locator('#muSafetyAssistantV150RC8RecordsHost').getByRole('button',{name:/關閉/}).click();
  console.log('BROWSER PASS fictional RC8.5 opening preserves all storage bytes and renders legacy records');
+ await page.getByRole('button',{name:'⚙️ 設定',exact:true}).click();cfg=page.locator('#muSafetyAssistantV150RC8SettingsHost');assert((await cfg.getByText('歷史廠區',{exact:false}).count())>=1);await cfg.locator('[data-cancel]').click();
  // Restore UI cancellation, merge, stale-editor closure and overwrite second confirmation.
  await page.getByRole('button',{name:'⚙️ 設定',exact:true}).click();cfg=page.locator('#muSafetyAssistantV150RC8SettingsHost');
  const backup={format:'mu-safety-assistant-backup',formatVersion:1,appVersion:'V1.50 RC8.5 試作版',createdAt:'2026-11-01T00:00:00Z',recordCount:1,data:{[rk]:records,[key]:{...saved,cp:[{c:'測試客戶',s:['一廠','新增二廠']}],p:['RESTORED'],pm:[{code:'RESTORED',note:'備份案'}]}}};

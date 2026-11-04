@@ -9,6 +9,7 @@ source=source.replace(/P=\[ \['華邦'[\s\S]*?\]\],SP=\['P260305300','P240508000
 source=source.replace('function cfg(o)',block+'function cfg(o)');
 source=source.replace('let o=L();panel(o)',"let existed=hasStoredUserSettings(),o=L();panel(o);if(!existed)openFirstSetup(o)");
 if(!source.includes('RC8.6_ONBOARDING_START')||!source.includes("P=[],SP=[]")||!source.includes('if(!existed)openFirstSetup(o)'))throw new Error('RC8.6 injection failed');
+source=source.replace('delete m.dp;return m','delete m.dp;return muUpgradeSettings(m)').replace('S(m);return m','muUpgradeSettings(m);S(m);return m');
 const oldMerge="settings.cp=muMergeObjectArray(settings.cp,incoming.cp,x=>String(x?.c||'').trim(),result)";
 if(!source.includes(oldMerge))throw new Error('Customer merge anchor missing');
 source=source.replace(oldMerge,'settings.cp=muMergeCustomerSites(settings.cp,incoming.cp,result)');

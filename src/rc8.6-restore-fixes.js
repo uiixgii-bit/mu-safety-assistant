@@ -15,3 +15,16 @@ function muAfterRestore(plan){
  document.getElementById(A.sid)?.remove();
  panel(L());
 }
+// Old releases kept built-in customer/site choices outside persisted cp.
+// Recover the last selected pair from existing settings without writing storage on open.
+function muUpgradeSettings(settings){
+ let pair=String(settings.lf||'').split(' → ');
+ if(pair.length!==2||!pair.every(x=>x.trim()))return settings;
+ let client=pair[0].trim(),site=pair[1].trim();
+ let customers=Array.isArray(settings.cp)?settings.cp:[];
+ let found=customers.find(x=>String(x?.c||'').trim()===client);
+ if(!found)customers.push({c:client,s:[site]});
+ else if(!Array.isArray(found.s))found.s=[site];
+ else if(!found.s.includes(site))found.s.push(site);
+ settings.cp=customers;return settings;
+}
