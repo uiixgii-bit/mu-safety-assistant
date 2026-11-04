@@ -55,7 +55,7 @@ const {chromium}=require('playwright');
  await recordsHost.locator('[data-apply-filter]').click();
  assert((await recordsHost.locator('[data-record-count]').innerText()).includes('0 筆'));
  await recordsHost.locator('[data-reset-filter]').click();
- assert((await recordsHost.locator('[data-record-count]').innerText()).includes('2 筆'));
+ assert.strictEqual(await recordsHost.locator('tbody tr').count(),2);assert.strictEqual(await recordsHost.locator('[data-record-count]').innerText(),'最近 30 筆紀錄');
  await recordsHost.getByRole('button',{name:'關閉',exact:true}).click();
  await page.getByRole('button',{name:'📊 報表輸出中心',exact:true}).click();
  await page.locator('input[type=month]').fill('2026-09');
