@@ -70,7 +70,7 @@ jobs:
       - name: Verify OOXML package relationships
         run: python3 tests/rc8.6-xlsx-package-check.py
 
-      - name: Verify offline six-slide PowerPoint generator
+      - name: Verify offline seven-slide PowerPoint generator
         run: node tests/rc8.6-pptx-report-check.js
 
       - name: Verify PowerPoint OOXML package

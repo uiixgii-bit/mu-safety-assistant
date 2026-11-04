@@ -13,9 +13,10 @@ for p in files:
      assert posixpath.normpath(posixpath.join(parent,r.get('Target'))) in names
   t=ET.fromstring(z.read('[Content_Types].xml'));types={n.get('PartName')[1:]:n.get('ContentType') for n in t if n.tag.endswith('Override')}
   assert types['ppt/presentation.xml']=='application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml'
-  root=ET.fromstring(z.read('ppt/presentation.xml'));assert len(root.find('{*}sldIdLst'))==6
-  for i in range(1,7):
+  relationships=ET.fromstring(z.read('ppt/_rels/presentation.xml.rels'));ids=[r.get('Id') for r in relationships];assert len(ids)==len(set(ids)), 'Relationship ID collision'
+  root=ET.fromstring(z.read('ppt/presentation.xml'));assert len(root.find('{*}sldIdLst'))==7
+  for i in range(1,8):
    assert types[f'ppt/slides/slide{i}.xml'].endswith('.slide+xml')
    assert types[f'ppt/notesSlides/notesSlide{i}.xml'].endswith('.notesSlide+xml')
    slide=ET.fromstring(z.read(f'ppt/slides/slide{i}.xml'));assert slide.findall('.//{*}t')
- print(p.name,'PASS: six slides, editable text, notes, content types, XML and internal relationships; no external resources')
+ print(p.name,'PASS: seven slides, editable text, notes, content types, XML and internal relationships; no external resources')
