@@ -9,4 +9,9 @@ source=source.replace(/P=\[ \['華邦'[\s\S]*?\]\],SP=\['P260305300','P240508000
 source=source.replace('function cfg(o)',block+'function cfg(o)');
 source=source.replace('let o=L();panel(o)',"let existed=hasStoredUserSettings(),o=L();panel(o);if(!existed)openFirstSetup(o)");
 if(!source.includes('RC8.6_ONBOARDING_START')||!source.includes("P=[],SP=[]")||!source.includes('if(!existed)openFirstSetup(o)'))throw new Error('RC8.6 injection failed');
+const oldMerge="settings.cp=muMergeObjectArray(settings.cp,incoming.cp,x=>String(x?.c||'').trim(),result)";
+if(!source.includes(oldMerge))throw new Error('Customer merge anchor missing');
+source=source.replace(oldMerge,'settings.cp=muMergeCustomerSites(settings.cp,incoming.cp,result)');
+source=source.replaceAll('result.textContent=muRestoreSummary(plan)', 'result.textContent=muRestoreSummary(plan);muAfterRestore(plan)');
+source=source.replace('function muBackupSettingsSection',fs.readFileSync('src/rc8.6-restore-fixes.js','utf8')+'\nfunction muBackupSettingsSection');
 fs.writeFileSync(targetPath,source);

@@ -24,7 +24,7 @@ jobs:
       - name: Check out RC8.6 branch
         uses: actions/checkout@v4
         with:
-          ref: release/rc8.6
+          ref: ${{ github.sha }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -60,3 +60,23 @@ jobs:
 
       - name: Verify RC6 regression
         run: node tests/rc6-static-check.js
+
+      - name: Verify RC8.6 current-source runtime
+        run: node tests/rc8.6-current-runtime-check.js
+
+      - name: Install isolated browser test dependencies
+        run: |
+          npm install --prefix "$RUNNER_TEMP/mu-browser" playwright@1.62.1
+          "$RUNNER_TEMP/mu-browser/node_modules/.bin/playwright" install --with-deps chromium
+
+      - name: Verify RC8.6 in isolated real Chromium
+        env:
+          NODE_PATH: ${{ runner.temp }}/mu-browser/node_modules
+        run: node tests/rc8.6-browser-check.js
+
+      - name: Preserve generated test workbooks
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rc8.6-acceptance-evidence
+          path: test-results/
