@@ -6,16 +6,19 @@ on:
     branches:
       - release/rc8.6
     paths:
-      - 'tests/rc8.6-settings-restore-check.js'
-      - 'src/mu-safety-assistant-v1.50-rc8.6.js'
+      - 'tests/**'
+      - 'src/**'
+      - 'scripts/**'
+      - '01_MU_Safety_Assistant_V1.50_RC8.6_試作版_一鍵安裝.html'
+      - '02_Bookmarklet_備用手動安裝_RC8.6.txt'
       - '.github/workflows/rc8.6-isolated-tests.yml'
 
 permissions:
   contents: read
 
 jobs:
-  settings-restore-isolation:
-    name: Settings restore isolation check
+  regression:
+    name: RC8.6 isolated regression suite
     runs-on: ubuntu-latest
     steps:
       - name: Check out RC8.6 branch
@@ -28,5 +31,32 @@ jobs:
         with:
           node-version: 22
 
-      - name: Run isolated settings restore test
+      - name: Verify RC8.6 onboarding and multi-user readiness
+        run: node tests/rc8.6-multi-user-readiness-check.js
+
+      - name: Verify RC8.6 settings restore isolation
         run: node tests/rc8.6-settings-restore-check.js
+
+      - name: Verify RC8.5 backup and restore
+        run: node tests/rc8.5-backup-restore-check.js
+
+      - name: Verify RC8.4 document work and Excel reports
+        run: node tests/rc8.4-document-work-check.js
+
+      - name: Verify RC8.3 Excel and project notes
+        run: node tests/rc8.3-excel-project-notes-check.js
+
+      - name: Verify RC8.2 record filtering
+        run: node tests/rc8.2-record-filter-check.js
+
+      - name: Verify RC8.1 statistics
+        run: node tests/rc8.1-statistics-check.js
+
+      - name: Verify RC7 records DOM behavior
+        run: node tests/rc7-records-dom-check.js
+
+      - name: Verify RC7 regression
+        run: node tests/rc7-static-check.js
+
+      - name: Verify RC6 regression
+        run: node tests/rc6-static-check.js
