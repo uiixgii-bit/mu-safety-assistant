@@ -15,4 +15,6 @@ if(!source.includes(oldMerge))throw new Error('Customer merge anchor missing');
 source=source.replace(oldMerge,'settings.cp=muMergeCustomerSites(settings.cp,incoming.cp,result)');
 source=source.replaceAll('result.textContent=muRestoreSummary(plan)', 'result.textContent=muRestoreSummary(plan);muAfterRestore(plan)');
 source=source.replace('function muBackupSettingsSection',fs.readFileSync('src/rc8.6-restore-fixes.js','utf8')+'\nfunction muBackupSettingsSection');
+source=source.replace('function reportSummaryRows(data)','function muLegacyReportSummaryRows(data)').replace('function buildXlsxReport(items,kind,value)','function muLegacyBuildXlsxReport(items,kind,value)');
+source=source.replace('/* RC8.4_XLSX_END */',fs.readFileSync('src/rc8.6-quarter-report.js','utf8')+'\n/* RC8.4_XLSX_END */');
 fs.writeFileSync(targetPath,source);

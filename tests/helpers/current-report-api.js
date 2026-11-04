@@ -1,0 +1,2 @@
+const fs=require('fs'),vm=require('vm');
+module.exports=function(){const s=fs.readFileSync('src/mu-safety-assistant-v1.50-rc8.6.js','utf8');let a=s.indexOf('function defectShape(d)'),b=s.indexOf('function openStatisticsModal',a);if(a<0||b<a)throw Error('Report source anchors missing');return vm.runInNewContext(`(()=>{${s.slice(a,b)};return{excelReportData,muQuarterSummary,muQuarterSlideData,muManagementRows,muCoverageRows,buildXlsxReport,reportWindow,muUnzipStored}})()`,{TextEncoder,TextDecoder,Date,Map,Set,JSON,Number,String,Object,Array,DataView,Uint8Array,Error})};

@@ -1,0 +1,7 @@
+// Local-only validation. Input is a user-supplied JSON extracted from report detail rows.
+// Do not commit source records or generated reports to the public repository.
+const fs=require('fs'),path=require('path'),assert=require('assert'),api=require('../tests/helpers/current-report-api')();
+const [input,output]=process.argv.slice(2);if(!input||!output)throw Error('Usage: node scripts/verify-real-quarter-input.js /private/records.json /private/output');
+const records=JSON.parse(fs.readFileSync(input,'utf8')),snapshot=JSON.stringify(records);fs.mkdirSync(output,{recursive:true});
+let result={};for(let period of ['2026-Q3','2026-Q4']){let data=api.excelReportData(records,'quarter',period),m=api.muQuarterSummary(data),book=api.buildXlsxReport(records,'quarter',period);fs.writeFileSync(path.join(output,'MU-'+period+'-部分資料.xlsx'),book.bytes);fs.writeFileSync(path.join(output,'MU-'+period+'-簡報資料.json'),JSON.stringify(api.muQuarterSlideData(records,period),null,2));result[period]=m;console.log(period,JSON.stringify({records:m.records,days:m.days,crew:m.crew,safety:m.safety,nights:m.nights,defects:m.defects,duplicates:m.duplicates,coverage:m.coverage.first+'..'+m.coverage.last,documents:m.documents.length}))}
+assert.strictEqual(JSON.stringify(records),snapshot,'Input records must remain immutable');fs.writeFileSync(path.join(output,'verified-metrics.json'),JSON.stringify(result,null,2));

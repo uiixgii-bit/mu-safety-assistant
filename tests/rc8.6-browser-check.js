@@ -58,7 +58,7 @@ const {chromium}=require('playwright');
  assert.strictEqual(await recordsHost.locator('tbody tr').count(),2);assert.strictEqual(await recordsHost.locator('[data-record-count]').innerText(),'最近 30 筆紀錄');
  await recordsHost.getByRole('button',{name:'關閉',exact:true}).click();
  await page.getByRole('button',{name:'📊 報表輸出中心',exact:true}).click();
- await page.locator('input[type=month]').fill('2026-09');
+ await page.locator('input[type=month]').fill('2026-09');await page.getByLabel('季報年份').fill('2026');await page.getByLabel('季報季度').selectOption('3');
  fs.mkdirSync('test-results',{recursive:true});
  for(const [label,kind] of [['匯出月報 .xlsx','month'],['匯出季報 .xlsx','quarter']]){
   const pending=page.waitForEvent('download');await page.getByRole('button',{name:label,exact:true}).click();const download=await pending;
