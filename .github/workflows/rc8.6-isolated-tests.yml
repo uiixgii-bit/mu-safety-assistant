@@ -70,6 +70,12 @@ jobs:
       - name: Verify OOXML package relationships
         run: python3 tests/rc8.6-xlsx-package-check.py
 
+      - name: Verify offline six-slide PowerPoint generator
+        run: node tests/rc8.6-pptx-report-check.js
+
+      - name: Verify PowerPoint OOXML package
+        run: python3 tests/rc8.6-pptx-package-check.py
+
       - name: Install isolated browser test dependencies
         run: |
           npm install --prefix "$RUNNER_TEMP/mu-browser" playwright@1.62.1
@@ -78,7 +84,9 @@ jobs:
       - name: Verify RC8.6 in isolated real Chromium
         env:
           NODE_PATH: ${{ runner.temp }}/mu-browser/node_modules
-        run: node tests/rc8.6-browser-check.js
+        run: |
+          node tests/rc8.6-browser-check.js
+          python3 tests/rc8.6-pptx-package-check.py
 
       - name: Preserve generated test workbooks
         if: always()

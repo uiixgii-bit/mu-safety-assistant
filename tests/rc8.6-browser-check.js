@@ -64,6 +64,9 @@ const {chromium}=require('playwright');
   const pending=page.waitForEvent('download');await page.getByRole('button',{name:label,exact:true}).click();const download=await pending;
   assert(download.suggestedFilename().endsWith('.xlsx'));const target=`test-results/browser-${kind}.xlsx`;await download.saveAs(target);assert.strictEqual(fs.readFileSync(target).subarray(0,2).toString(),'PK');
  }
+ const storageBeforePpt=await page.evaluate(()=>JSON.stringify({...localStorage}));const pptRequests=[];page.on('request',r=>pptRequests.push(r.url()));const pptPending=page.waitForEvent('download');await page.getByRole('button',{name:'匯出季報 .pptx',exact:true}).click();const ppt=await pptPending;assert(ppt.suggestedFilename().includes('2026-Q3'));await ppt.saveAs('test-results/browser-quarter.pptx');assert.strictEqual(fs.readFileSync('test-results/browser-quarter.pptx').subarray(0,2).toString(),'PK');
+ await page.getByLabel('季報季度').selectOption('4');const emptyPending=page.waitForEvent('download');await page.getByRole('button',{name:'匯出季報 .pptx',exact:true}).click();const emptyPpt=await emptyPending;assert(emptyPpt.suggestedFilename().includes('2026-Q4'));await emptyPpt.saveAs('test-results/browser-empty-quarter.pptx');assert.strictEqual(await page.evaluate(()=>JSON.stringify({...localStorage})),storageBeforePpt);assert.deepStrictEqual(pptRequests,[]);
+ console.log('BROWSER PASS actual Q3 and empty-Q4 PowerPoint downloads, unchanged storage, zero network requests');
  console.log('BROWSER PASS records filter/reset and actual monthly/quarterly XLSX downloads');
  assert.deepStrictEqual(errors,[]);await browser.close();console.log('RC8.6 REAL CHROMIUM ISOLATED SUITE PASS');
 })().catch(e=>{console.error(e);process.exit(1)});
