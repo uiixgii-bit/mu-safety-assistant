@@ -1,0 +1,61 @@
+const assert=require('node:assert/strict');
+const {parseEtc,calculate,key,readBaseline,workbook}=require('../src/rc8.7-transport');
+const Zip=require('jszip');
+const october='2026-10', date=n=>october+'-'+String(n).padStart(2,'0');
+const log=(n,site='甲廠')=>({date:date(n),client:'測試客戶',site,projectId:'P001'});
+const pdf=parseEtc(['2026/10/01 53.8公里 36元 已於 "2026/10/04"\n2026/10/02 58.3公里 41元 已扣款\n2026/10/03 65.3公里 48元 已扣款\n2026/10/04 20.4公里 10元 已扣款\n2026/10/04 10.4公里 11元 已扣款\n1/1']);
+const records=[log(1),log(1),log(2),log(3),log(4),log(4,'乙廠'),log(5)];
+const rates={[key('測試客戶','甲廠')]:80,[key('測試客戶','乙廠')]:60};
+const original=JSON.stringify({records,pdf});
+const edits={[date(2)]:{site:'乙廠',fuelKm:'60',note:'確認報銷地點',decision:'approve'}};
+const baseline={[date(2)]:[{site:'乙廠',projectId:'P001'}]};
+const rows=calculate(october,records,pdf,rates,edits,baseline);
+assert.deepEqual(pdf.errors,[]);
+assert.deepEqual(rows.map(r=>r.etcAmount),[54,58,65,31,null]);
+assert.equal(rows[0].claimFuel,false);
+assert.equal(rows[0].issues.includes('同日多筆工作紀錄，僅產生一列'),true);
+assert.equal(rows[1].fuel,360);
+assert.equal(rows[1].original.fuelKm,8000);
+assert.equal(rows[1].original.site,'甲廠');
+assert.equal(rows[1].issues.includes('工作日誌與舊報銷地點不同'),true);
+assert.equal(rows[2].charge,48);
+assert.equal(rows[3].issues.includes('跨廠支援'),true);
+assert.equal(rows[3].charge,21);
+assert.equal(rows[3].claimEtc,false);
+assert.equal(rows[4].issues.includes('無 ETC 紀錄'),true);
+assert.equal(rows[4].claimFuel,false);
+assert.equal(JSON.stringify({records,pdf}),original);
+const partial=parseEtc(['2026/10/03 65.3公里 48元 已扣款\n2026/10/04 壞資料\n1/2']);
+assert.ok(partial.errors.length>=2);
+assert.equal(calculate(october,[],partial,rates,{[date(3)]:{...log(3),fuelKm:'80',decision:'approve',note:'確認'}})[0].claimEtc,false);
+const unposted=parseEtc(['2026/10/01 53.8公里 36元 未扣款\n1/1']);
+assert.equal(calculate(october,[log(1)],unposted,rates)[0].charge,null);
+assert.ok(parseEtc(['影像掃描頁']).errors.length);
+assert.throws(()=>calculate(october,[{date:'2026-10-33'}],pdf,rates),/無效日期/);
+assert.equal(calculate(october,[{...log(3),status:'休假'}],pdf,rates).find(r=>r.date===date(3)).claimFuel,false);
+
+async function checkWorkbook(){
+ const zip=new Zip(), names=['各類報銷清單','各類報銷清單 (2)','通行費'];
+ zip.file('xl/workbook.xml','<workbook xmlns:r="rel"><sheets>'+names.map((name,i)=>'<sheet name="'+name+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>').join('')+'</sheets><calcPr/></workbook>');
+ zip.file('xl/_rels/workbook.xml.rels','<Relationships>'+names.map((_,i)=>'<Relationship Id="rId'+(i+1)+'" Target="worksheets/sheet'+(i+1)+'.xml"/>').join('')+'</Relationships>');
+ zip.file('[Content_Types].xml','<Types></Types>');
+ zip.file('xl/styles.xml','styles preserved');
+ for(const [i,last] of [23,28,23].entries()){
+  const grid=Array.from({length:last-6},(_,j)=>{
+   const n=j+7;
+   return '<row r="'+n+'"><c r="A'+n+'" s="9"><v>46300</v></c>'+Array.from('BCDEFGHI').map(c=>'<c r="'+c+n+'"/>').join('')+'</row>';
+  }).join('');
+  zip.file('xl/worksheets/sheet'+(i+1)+'.xml','<worksheet><sheetData>'+grid+'<row r="'+(last+1)+'"><c r="F'+(last+1)+'"><f>SUM(F7:F'+last+')</f><v>999</v></c><c r="H'+(last+1)+'"><f>SUM(H7:H'+last+')</f><v>999</v></c></row></sheetData><mergeCells/><pageSetup/></worksheet>');
+ }
+ const bytes=await zip.generateAsync({type:'nodebuffer'});
+ await readBaseline(Zip,bytes);
+ const result=await Zip.loadAsync(await workbook(Zip,bytes,october,rows,[]));
+ assert.equal(await result.file('xl/styles.xml').async('string'),'styles preserved');
+ const fuel=await result.file('xl/worksheets/sheet1.xml').async('string');
+ assert.match(fuel,/<c r="A7" s="9"><v>\d+<\/v>/);
+ assert.match(fuel,/<f>SUM\(F7:F23\)<\/f><v>840<\/v>/);
+ assert.ok(fuel.includes('<mergeCells/><pageSetup/>'));
+ assert.match(await result.file('xl/worksheets/muTransportAudit.xml').async('string'),/工作日誌與舊報銷地點不同/);
+ await assert.rejects(workbook(Zip,bytes,october,Array(18).fill(rows[1]),[]),/分批/);
+}
+checkWorkbook().then(()=>console.log('RC8.7 PASS: PDF parsing, incomplete input, daily rounding, review gates, provenance, and template preservation')).catch(e=>{console.error(e);process.exitCode=1});

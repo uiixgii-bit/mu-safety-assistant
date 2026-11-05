@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' blob:; worker-src blob:; style-src 'unsafe-inline'; connect-src blob:">
+<title>MU Safety Assistant RC8.7｜交通津貼與報銷中心</title>
+<style>
+body{font:16px/1.6 system-ui,sans-serif;background:#edf3f7;color:#162b3b;margin:0}main{max-width:1200px;margin:auto;padding:26px}section{background:white;border:1px solid #c8d6e1;border-radius:12px;padding:16px 20px;margin-bottom:16px}h1,h2{margin-top:0}label{display:block;margin:8px 0}button,input,select{font:inherit;padding:5px;margin:3px}button{background:#14538a;color:white;border:0;border-radius:5px;padding:8px 14px;cursor:pointer}button:disabled{opacity:.55}table{border-collapse:collapse;width:100%;min-width:720px}th,td{text-align:left;padding:8px;border-bottom:1px solid #d7e2eb;vertical-align:top}th{background:#e4edf5}.scroll{overflow:auto}small{color:#4b5865}.warn{color:#922c0e}summary{cursor:pointer}details input{max-width:200px}output{display:block}
+</style>
+</head>
+<body><main>
+<h1>交通津貼與報銷中心</h1>
+<p>MU Safety Assistant RC8.7 驗收版 · 所有檔案在此分頁內離線處理。</p>
+<section><h2>1. 匯入當月資料</h2>
+<label>工作日誌 JSON（從 RC8.7 書籤下載）<input id="logs" type="file" accept=".json"></label>
+<label>月份 <input id="month" type="month"></label>
+<label>遠通 ETC PDF <input id="pdf" type="file" accept=".pdf"></label>
+<label>公司報銷範本 XLSX <input id="template" type="file" accept=".xlsx"></label>
+<p id="source" role="status"></p>
+</section>
+<section><h2>2. 核定往返公里數</h2><div id="rates">請先匯入工作日誌。</div>
+<p><small>油資依客戶與廠區分開設定，每公里 6 元。ETC 只使用遠通里程，每日加總後以每公里 1 元四捨五入。</small></p>
+<button id="calculate">產生／更新試算</button></section>
+<section><h2>3. 核對與匯出</h2>
+<p>待確認的日期會保留在核對明細。可展開該日補充理由、修正欄位，再選擇確認或排除。缺少或不完整的 ETC 來源會阻擋相關 ETC 入表。</p>
+<output id="result"></output><div id="review" class="scroll"></div>
+<button id="export" disabled>下載報銷 Excel</button>
+<p id="message" role="status"></p></section>
+</main>
+<!-- APP_SCRIPTS -->
+</body></html>
