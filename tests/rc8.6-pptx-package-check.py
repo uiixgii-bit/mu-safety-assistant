@@ -18,5 +18,8 @@ for p in files:
   for i in range(1,8):
    assert types[f'ppt/slides/slide{i}.xml'].endswith('.slide+xml')
    assert types[f'ppt/notesSlides/notesSlide{i}.xml'].endswith('.notesSlide+xml')
-   slide=ET.fromstring(z.read(f'ppt/slides/slide{i}.xml'));assert slide.findall('.//{*}t')
+   for part in (f'ppt/slides/slide{i}.xml', f'ppt/notesSlides/notesSlide{i}.xml'):
+    runs=ET.fromstring(z.read(part)).findall('.//{http://schemas.openxmlformats.org/drawingml/2006/main}t')
+    assert runs, f'Missing DrawingML text in {part}'
+    assert all(not run.attrib for run in runs), f'DrawingML text does not allow attributes in {part}'
  print(p.name,'PASS: seven slides, editable text, notes, content types, XML and internal relationships; no external resources')
