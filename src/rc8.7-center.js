@@ -1,6 +1,7 @@
 (() => {
  const $=id=>document.getElementById(id);
  let logs=[], logMonth='', etc={rows:[],errors:['尚未匯入 ETC PDF']}, templateBytes, baseline={}, edits={}, rows=[];
+ const removedDates=new Set();
  let busy=false;
  const rates=Object.create(null);
  try {Object.assign(rates,JSON.parse(localStorage.getItem('mu-transport-rc87-rates')??'{}'));} catch {}
@@ -11,7 +12,7 @@
   const a=node('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
  };
  const invalidate=()=>{
-  rows=[];$('review').replaceChildren();$('export').disabled=true;report('result','請重新產生試算。');
+  rows=[];$('review').replaceChildren();$('removed-days').replaceChildren();$('export').disabled=true;report('result','請重新產生試算。');
  };
  const reset=()=>{edits={};invalidate();};
  const load=(id,read)=>{
@@ -25,6 +26,7 @@
   };
  };
  load('logs',async file=>{
+  removedDates.clear();
   logs=[];logMonth='';$('rates').replaceChildren();
   if(!file) return '未匯入工作日誌';
   const data=JSON.parse(await file.text());
@@ -57,7 +59,13 @@
   if(busy) return;
   const month=$('month').value;
   if(month!==logMonth) throw Error('請先匯入所選月份的工作日誌 JSON');
-  rows=MuTransport.calculate(month,logs,etc,rates,edits,baseline);
+  rows=MuTransport.calculate(month,logs,etc,rates,edits,baseline).filter(r=>!removedDates.has(r.date));
+  const restoreButtons=[...removedDates].sort().map(date=>{
+   const restore=node('button','復原 '+date);
+   restore.onclick=()=>{removedDates.delete(date);render();report('message',date+' 已復原。');};
+   return restore;
+  });
+  $('removed-days').replaceChildren(...restoreButtons);
   const sum=(claim,key)=>rows.reduce((n,r)=>n+(r[claim]?r[key]:0),0);
   report('result','油資入表 '+sum('claimFuel','fuel').toFixed(2)+' 元　ETC 入表 '+sum('claimEtc','etcAmount')+' 元　待確認 '+rows.filter(r=>r.status==='待確認').length+' 天');
   $('export').disabled=!templateBytes || !rows.length;
@@ -86,7 +94,12 @@
     if((decision.value || Object.keys(next).some(k=>k!=='note' && k!=='decision')) && !note) {report('message','請填寫核對理由。');return;}
     edits[r.date]=next;render();report('message',r.date+' 核對已套用。');
    };
-   details.append(decision,save);td.append(details);tr.append(td);body.append(tr);
+   const remove=node('button','刪除此日');
+   remove.onclick=()=>{
+    if(!window.confirm('將 '+r.date+' 從本次報銷與核對明細移除？原工作日誌會保留。')) return;
+    removedDates.add(r.date);render();report('message',r.date+' 已從本次報銷移除。');
+   };
+   details.append(decision,save,remove);td.append(details);tr.append(td);body.append(tr);
   }
   $('review').replaceChildren(table);
  }

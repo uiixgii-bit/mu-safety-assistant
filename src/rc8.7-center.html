@@ -23,8 +23,9 @@ body{font:16px/1.6 system-ui,sans-serif;background:#edf3f7;color:#162b3b;margin:
 <p><small>油資依客戶與廠區分開設定，每公里 6 元。ETC 只使用遠通里程，每日加總後以每公里 1 元四捨五入。</small></p>
 <button id="calculate">產生／更新試算</button></section>
 <section><h2>3. 核對與匯出</h2>
-<p>待確認的日期會保留在核對明細。可展開該日補充理由、修正欄位，再選擇確認或排除。缺少或不完整的 ETC 來源會阻擋相關 ETC 入表。</p>
+<p>待確認的日期會保留在核對明細。可展開該日補充理由、修正欄位，再選擇確認或排除。日期填錯時可用「刪除此日」，並可在下方復原。重新匯入工作日誌會重置刪除。缺少或不完整的 ETC 來源會阻擋相關 ETC 入表。</p>
 <output id="result"></output><div id="review" class="scroll"></div>
+<div id="removed-days"></div>
 <button id="export" disabled>下載報銷 Excel</button>
 <p id="message" role="status"></p></section>
 </main>
