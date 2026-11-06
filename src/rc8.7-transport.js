@@ -111,8 +111,9 @@ const MuTransport = (() => {
  function patchForm(source, rows, last, mode) {
   if(rows.length>last-6) throw Error('範本僅有 '+(last-6)+' 個明細列，請分批匯出以保留公式與核簽區');
   let expected=0;
+  const claimKm=r=>mode==='fuel'?r.final.fuelKm/100:r.etcAmount;
   const totals={
-   D:rows.reduce((sum,r)=>sum+(mode==='fuel'?r.final.fuelKm/100:r.final.etcKm/1000),0),
+   D:rows.reduce((sum,r)=>sum+claimKm(r),0),
    F:rows.reduce((sum,r)=>sum+(mode==='fuel'?r.fuel:r.etcAmount),0)
   };
   totals.H=totals.F;
@@ -120,10 +121,13 @@ const MuTransport = (() => {
    const n=Number(number);
    if(n<7 || n>last) return raw;
    expected++;
-   const r=rows[n-7], values=r?[
+   const r=rows[n-7];
+   const prior=r?.prior.find(p=>p.mode===mode && p.site && r.final.site.includes(p.site));
+   const category=mode==='fuel'?'私車公用油資':'私車公用通行費';
+   const values=r?[
     Math.round((Date.parse(r.date)-Date.UTC(1899,11,30))/86400000),r.final.projectId,
-    mode==='fuel'?'私車公用油資':'高速公路通行費',mode==='fuel'?r.final.fuelKm/100:r.final.etcKm/1000,
-    null,mode==='fuel'?r.fuel:r.etcAmount,0,mode==='fuel'?r.fuel:r.etcAmount,[r.final.client,r.final.site].filter(Boolean).join('／')
+    prior?.description || category+'（'+r.final.site+'）',claimKm(r),
+    null,mode==='fuel'?r.fuel:r.etcAmount,0,mode==='fuel'?r.fuel:r.etcAmount,prior?.remark || (mode==='fuel'?'汽車/上下班':'汽車/上下班通行費')
    ]:Array(9).fill(null);
    const found=new Set();
    raw=raw.replace(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g,(full,attrs,body)=>{
@@ -144,7 +148,7 @@ const MuTransport = (() => {
  const ns='http://schemas.openxmlformats.org/spreadsheetml/2006/main';
  const rel='http://schemas.openxmlformats.org/officeDocument/2006/relationships';
  function auditSheet(rows, month, errors) {
-  const data=[['交通津貼核對明細',month],['來源問題',errors.join('；')],['油資核定公里 × 6；ETC 逐日合計公里後四捨五入；實扣獨立顯示'],
+  const data=[['交通津貼核對明細',month],['來源問題',errors.join('；')],['油資核定公里 × 6；ETC 申報公里及金額依每日合計里程四捨五入；實際公里與實扣保留'],
    ['日期','原始客戶','原始廠區','原始案號','原始油資公里','原始 ETC 公里','實際扣款','確認客戶','確認廠區','確認案號','確認油資公里','確認 ETC 公里','試算油資','試算 ETC','入表油資','入表 ETC','狀態','異常','人工註記','工作日誌來源','遠通 PDF 來源','原報銷範本同日資料'],
    ...rows.map(r=>[r.date,r.original.client,r.original.site,r.original.projectId,r.original.fuelKm===null?null:r.original.fuelKm/100,r.original.etcKm===null?null:r.original.etcKm/1000,r.charge,r.final.client,r.final.site,r.final.projectId,r.final.fuelKm===null?null:r.final.fuelKm/100,r.final.etcKm===null?null:r.final.etcKm/1000,r.fuel,r.etcAmount,r.claimFuel?r.fuel:null,r.claimEtc?r.etcAmount:null,r.status,r.issues.join('；'),r.note,JSON.stringify(r.logs),r.trips.map(t=>'第 '+t.page+' 頁 '+t.source).join('；'),JSON.stringify(r.prior)])];
   return '<worksheet xmlns="'+ns+'"><cols><col min="1" max="17" width="18" customWidth="1"/><col min="18" max="22" width="36" customWidth="1"/></cols><sheetData>'+
@@ -197,7 +201,7 @@ const MuTransport = (() => {
     if(!/^\d{5}$/.test(values.A??'')) continue;
     const date=new Date(Date.UTC(1899,11,30)+Number(values.A)*86400000).toISOString().slice(0,10);
     const site=clean(values.C?.split(/[→➝]/)[1]);
-    (baseline[date]??=[]).push({mode,site,description:values.C,projectId:values.B,km:Number(values.D),amount:Number(values.F)});
+    (baseline[date]??=[]).push({mode,site,description:values.C,remark:values.I,projectId:values.B,km:Number(values.D),amount:Number(values.F)});
    }
   }
   return baseline;

@@ -8,7 +8,7 @@ const records=[log(1),log(1),log(2),log(3),log(4),log(4,'乙廠'),log(5)];
 const rates={[key('測試客戶','甲廠')]:80,[key('測試客戶','乙廠')]:60};
 const original=JSON.stringify({records,pdf});
 const edits={[date(2)]:{site:'乙廠',fuelKm:'60',note:'確認報銷地點',decision:'approve'}};
-const baseline={[date(2)]:[{site:'乙廠',projectId:'P001'}]};
+const baseline={[date(2)]:[{mode:'fuel',site:'乙廠',projectId:'P001',description:'私車公用油資(辦公室→乙廠→辦公室)',remark:'油資原備註'}]};
 const rows=calculate(october,records,pdf,rates,edits,baseline);
 assert.deepEqual(pdf.errors,[]);
 assert.deepEqual(rows.map(r=>r.etcAmount),[54,58,65,31,null]);
@@ -55,6 +55,12 @@ async function checkWorkbook(){
  assert.match(fuel,/<c r="A7" s="9"><v>\d+<\/v>/);
  assert.match(fuel,/<f>SUM\(F7:F23\)<\/f><v>840<\/v>/);
  assert.ok(fuel.includes('<mergeCells/><pageSetup/>'));
+ assert.match(fuel,/私車公用油資\(辦公室→乙廠→辦公室\)/);
+ assert.match(fuel,/油資原備註/);
+ const etc=await result.file('xl/worksheets/sheet3.xml').async('string');
+ assert.match(etc,/<c r="D7"><v>58<\/v>/);
+ assert.match(etc,/<c r="D8"><v>65<\/v>/);
+ assert.match(etc,/汽車\/上下班通行費/);
  assert.match(await result.file('xl/worksheets/muTransportAudit.xml').async('string'),/工作日誌與舊報銷地點不同/);
  await assert.rejects(workbook(Zip,bytes,october,Array(18).fill(rows[1]),[]),/分批/);
 }
