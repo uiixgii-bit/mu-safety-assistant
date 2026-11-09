@@ -11,17 +11,22 @@
   const url=URL.createObjectURL(new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
   const a=node('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
  };
+ const updateExportButtons=()=>{
+  $('export-fuel').disabled=busy || !templateBytes || !rows.some(r=>r.claimFuel);
+  $('export-etc').disabled=busy || !templateBytes || !rows.some(r=>r.claimEtc);
+ };
  const invalidate=()=>{
-  rows=[];$('review').replaceChildren();$('removed-days').replaceChildren();$('export').disabled=true;report('result','請重新產生試算。');
+  rows=[];$('review').replaceChildren();$('removed-days').replaceChildren();updateExportButtons();report('result','請重新產生試算。');
  };
  const reset=()=>{edits={};invalidate();};
  const load=(id,read)=>{
   $(id).onchange=async()=>{
    busy=true;reset();
    for(const input of ['logs','pdf','template','calculate']) $(input).disabled=true;
-   report('source','正在讀取 '+($(id).files[0]?.name??'')+'…');
-   try {report('source',await read($(id).files[0]));}
-   catch(error){report('source',error.message||String(error));}
+   const status=id==='template'?'template-status':'source';
+   report(status,'正在讀取 '+($(id).files[0]?.name??'')+'…');
+   try {report(status,await read($(id).files[0]));}
+   catch(error){report(status,error.message||String(error));}
    finally {busy=false;for(const input of ['logs','pdf','template','calculate']) $(input).disabled=false;}
   };
  };
@@ -67,15 +72,15 @@
   });
   $('removed-days').replaceChildren(...restoreButtons);
   const sum=(claim,key)=>rows.reduce((n,r)=>n+(r[claim]?r[key]:0),0);
-  report('result','油資入表 '+sum('claimFuel','fuel').toFixed(2)+' 元　ETC 入表 '+sum('claimEtc','etcAmount')+' 元　待確認 '+rows.filter(r=>r.status==='待確認').length+' 天');
-  $('export').disabled=!templateBytes || !rows.length;
+  report('result','油資入表 '+sum('claimFuel','fuel').toFixed(2)+' 元　ETC 入表 '+sum('claimEtc','etcAmount')+' 元　油資待確認 '+rows.filter(r=>r.fuelStatus==='待確認').length+' 天');
+  updateExportButtons();
   const table=node('table'), head=node('tr');
   for(const name of ['日期','客戶／廠區','油資 km／元','ETC km／元','遠通實扣','核對狀態','確認／修正'])head.append(node('th',name));
   const thead=node('thead'), body=node('tbody');thead.append(head);table.append(thead,body);
   const display=(n,d=1)=>n===null?'—':String(n/d);
   for(const r of rows){
    const tr=node('tr');
-   for(const value of [r.date,[r.final.client,r.final.site].filter(Boolean).join('／'),display(r.final.fuelKm,100)+'／'+display(r.fuel),display(r.final.etcKm,1000)+'／'+display(r.etcAmount),display(r.charge),r.status+(r.issues.length?' · '+r.issues.join('、'):'')]) tr.append(node('td',value));
+   for(const value of [r.date,[r.final.client,r.final.site].filter(Boolean).join('／'),display(r.final.fuelKm,100)+'／'+display(r.fuel),display(r.final.etcKm,1000)+'／'+display(r.etcAmount),display(r.charge),[['油資',r.fuelStatus,r.fuelIssues],['ETC',r.claimEtc?r.etcStatus:etc.errors.length?'未入表':r.etcStatus,r.etcIssues]].map(([name,status,issues])=>name+' '+status+(issues.length?' · '+issues.join('、'):'')).join(' ／ ')]) tr.append(node('td',value));
    const td=node('td'), details=node('details'), fields={}, patch=edits[r.date]??{};
    details.append(node('summary','檢視或修改'));
    if(r.prior.length) details.append(node('p','舊報銷：'+r.prior.map(x=>x.description).join('；')));
@@ -104,13 +109,13 @@
   $('review').replaceChildren(table);
  }
  $('calculate').onclick=()=>{try{render();report('message',etc.errors.join('；'));}catch(error){report('message',error.message);}};
- $('export').onclick=async()=>{
-  $('export').disabled=true;
+ for(const [mode,label] of [['fuel','油資'],['etc','ETC']]) $('export-'+mode).onclick=async()=>{
+  $('export-'+mode).disabled=true;
   const month=$('month').value;
   try{
-   download(await MuTransport.workbook(JSZip,templateBytes,month,rows,etc.errors),'MU-交通報銷-'+month+'-驗收.xlsx');
-   report('message','已匯出。請核對「核對明細」並依公司流程簽核。');
+   download(await MuTransport.workbook(JSZip,templateBytes,month,rows,etc.errors,mode),'MU-'+label+'報銷-'+month+'-驗收.xlsx');
+   report('message','已匯出 '+label+'。請核對「核對明細」並依公司流程簽核。');
   }catch(error){report('message',error.message);}
-  finally{$('export').disabled=busy || !templateBytes || !rows.length;}
+  finally{updateExportButtons();}
  };
 })();

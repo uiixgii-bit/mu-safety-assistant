@@ -15,9 +15,10 @@ body{font:16px/1.6 system-ui,sans-serif;background:#edf3f7;color:#162b3b;margin:
 <section><h2>1. 匯入當月資料</h2>
 <label>工作日誌 JSON（從 RC8.7 書籤下載）<input id="logs" type="file" accept=".json"></label>
 <label>月份 <input id="month" type="month"></label>
-<label>遠通 ETC PDF <input id="pdf" type="file" accept=".pdf"></label>
+<label>遠通 ETC PDF（只申報 ETC 時需要） <input id="pdf" type="file" accept=".pdf"></label>
 <label>公司報銷範本 XLSX <input id="template" type="file" accept=".xlsx"></label>
 <p id="source" role="status"></p>
+<p id="template-status" role="status">請選擇公司原始報銷範本 XLSX。</p>
 </section>
 <section><h2>2. 核定往返公里數</h2><div id="rates">請先匯入工作日誌。</div>
 <p><small>油資依客戶與廠區分開設定，每公里 6 元。ETC 只使用遠通里程，每日加總後以每公里 1 元四捨五入。</small></p>
@@ -26,7 +27,8 @@ body{font:16px/1.6 system-ui,sans-serif;background:#edf3f7;color:#162b3b;margin:
 <p>待確認的日期會保留在核對明細。可展開該日補充理由、修正欄位，再選擇確認或排除。日期填錯時可用「刪除此日」，並可在下方復原。重新匯入工作日誌會重置刪除。缺少或不完整的 ETC 來源會阻擋相關 ETC 入表。</p>
 <output id="result"></output><div id="review" class="scroll"></div>
 <div id="removed-days"></div>
-<button id="export" disabled>下載報銷 Excel</button>
+<button id="export-fuel" disabled>下載油資 Excel</button>
+<button id="export-etc" disabled>下載 ETC Excel</button>
 <p id="message" role="status"></p></section>
 </main>
 <!-- APP_SCRIPTS -->

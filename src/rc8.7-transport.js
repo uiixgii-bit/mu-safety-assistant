@@ -73,32 +73,41 @@ const MuTransport = (() => {
    const patch=edits[date]??{}, final={...original};
    for(const field of ['client','site','projectId']) if(field in patch) final[field]=clean(patch[field]);
    for(const [field,places] of [['fuelKm',2],['etcKm',3]]) if(field in patch) final[field]=units(patch[field],places);
-   const issues=[];
-   if (!logs.length) issues.push('無工作日誌／非工作日通行');
+   const commonIssues=[];
+   if (!logs.length) commonIssues.push('無工作日誌／非工作日通行');
    const prior=baseline[date]??[];
-   if(logs.length && prior.some(entry=>entry.site && !logs.some(log=>clean(log.site).includes(entry.site)))) issues.push('工作日誌與舊報銷地點不同');
-   if(logs.length && prior.some(entry=>entry.projectId && !logs.some(log=>clean(log.projectId)===entry.projectId))) issues.push('工作日誌與舊報銷案號不同');
-   if(trips.some(t=>t.charge===null)) issues.push('通行費扣款狀態未確認');
-   if (logs.length>1) issues.push('同日多筆工作紀錄，僅產生一列');
-   if (new Set(logs.map(l=>key(l.client,l.site))).size>1) issues.push('跨廠支援');
-   if (logs.some(l=>/休假|請假|非工作日|工務所|辦公室|文書/.test([l.status,l.workLocation,l.workTemplateName].join(' ')))) issues.push('休假或非駐廠紀錄');
-   if (!trips.length) issues.push('無 ETC 紀錄');
-   if (trips.length>1) issues.push('同日多筆 ETC，已先加總里程');
-   if (etc.errors.length) issues.push('ETC 來源待確認');
-   if (final.fuelKm===null) issues.push('缺少有效核定油資公里數');
-   if (final.etcKm===null && trips.length) issues.push('缺少有效 ETC 里程');
-   if (!final.site || !final.projectId) issues.push('缺少廠區或案號');
-   const changed=Object.keys(original).some(k=>original[k]!==final[k]);
-   if (changed) issues.push('人工修正');
+   if (logs.length>1) commonIssues.push('同日多筆工作紀錄，僅產生一列');
+   if (new Set(logs.map(l=>key(l.client,l.site))).size>1) commonIssues.push('跨廠支援');
+   if (logs.some(l=>/休假|請假|非工作日|工務所|辦公室|文書/.test([l.status,l.workLocation,l.workTemplateName].join(' ')))) commonIssues.push('休假或非駐廠紀錄');
+   if (!final.site || !final.projectId) commonIssues.push('缺少廠區或案號');
+   const issueList=mode=>{
+    const issues=[...commonIssues], old=prior.filter(entry=>!entry.mode || entry.mode===mode);
+    if(logs.length && old.some(entry=>entry.site && !logs.some(log=>clean(log.site).includes(entry.site)))) issues.push('工作日誌與舊報銷地點不同');
+    if(logs.length && old.some(entry=>entry.projectId && !logs.some(log=>clean(log.projectId)===entry.projectId))) issues.push('工作日誌與舊報銷案號不同');
+    const kmField=mode==='fuel'?'fuelKm':'etcKm';
+    if(['client','site','projectId',kmField].some(field=>original[field]!==final[field])) issues.push('人工修正');
+    return issues;
+   };
+   const fuelIssues=issueList('fuel'), etcIssues=issueList('etc');
+   if (final.fuelKm===null) fuelIssues.push('缺少有效核定油資公里數');
+   if (trips.some(t=>t.charge===null)) etcIssues.push('通行費扣款狀態未確認');
+   if (!trips.length) etcIssues.push('無 ETC 紀錄');
+   if (trips.length>1) etcIssues.push('同日多筆 ETC，已先加總里程');
+   if (etc.errors.length) etcIssues.push('ETC 來源待確認');
+   if (final.etcKm===null && trips.length) etcIssues.push('缺少有效 ETC 里程');
    const note=clean(patch.note), approval=patch.decision==='approve' && !!note;
-   const eligible=patch.decision!=='exclude' && (!issues.length || approval);
+   const statusFor=issues=>patch.decision==='exclude'?'排除':issues.length?(approval?'人工確認':'待確認'):'可列入';
+   const eligible=issues=>patch.decision!=='exclude' && !!final.site && !!final.projectId && (!issues.length || approval);
    const fuel=final.fuelKm===null?null:final.fuelKm*6/100;
    const etcAmount=final.etcKm===null?null:Math.floor((final.etcKm+500)/1000);
    const charge=trips.length && trips.every(t=>t.charge!==null)?trips.reduce((n,t)=>n+t.charge,0)/100:null;
-   return {date,logs,trips,prior,original,final,issues,note,changed,fuel,etcAmount,charge,
-    claimFuel:eligible && !!final.site && !!final.projectId && fuel!==null,
-    claimEtc:eligible && !!final.site && !!final.projectId && etcAmount!==null && trips.length>0 && !etc.errors.length,
-    status:patch.decision==='exclude'?'排除':issues.length?(approval?'人工確認':'待確認'):'可列入'};
+   const issues=[...new Set([...fuelIssues,...etcIssues])];
+   const changed=Object.keys(original).some(k=>original[k]!==final[k]);
+   const claimFuel=eligible(fuelIssues) && fuel!==null;
+   const claimEtc=eligible(etcIssues) && etcAmount!==null && trips.length>0 && !etc.errors.length;
+   return {date,logs,trips,prior,original,final,issues,note,changed,fuel,etcAmount,charge,claimFuel,claimEtc,
+    fuelIssues,etcIssues,fuelStatus:statusFor(fuelIssues),etcStatus:statusFor(etcIssues),status:statusFor(issues)};
+
   });
  }
  const xml = value => String(value??'').replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\ufffe\uffff]/g,'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -160,6 +169,7 @@ const MuTransport = (() => {
   let book=await read('xl/workbook.xml'), rels=await read('xl/_rels/workbook.xml.rels'), types=await read('[Content_Types].xml');
   if(/\bdate1904="(?:1|true)"/.test(book)) throw Error('範本須使用 Excel 1900 日期系統');
   const sheets=[...book.matchAll(/<sheet\b[^>]*\bname="([^"]+)"[^>]*\br:id="([^"]+)"/g)];
+  if(sheets.some(sheet=>sheet[1]==='核對明細')) throw Error('你選到已匯出的報銷檔。請改選公司原始報銷範本 XLSX。');
   if(sheets.length!==3 || !['各類報銷清單','各類報銷清單 (2)','通行費'].every(name=>sheets.some(s=>s[1]===name)) || !book.includes('</sheets>') || !rels.includes('</Relationships>') || !types.includes('</Types>')) throw Error('請使用相同版型的 10 月報銷 XLSX 範本');
   const forms=[];
   for(const [name,mode,last] of [['各類報銷清單','fuel',23],['各類報銷清單 (2)','unused',28],['通行費','etc',23]]) {
@@ -206,8 +216,17 @@ const MuTransport = (() => {
   }
   return baseline;
  }
- async function workbook(JSZip, bytes, month, rows, errors) {
+ async function workbook(JSZip, bytes, month, rows, errors, mode) {
   let {zip,book,rels,types,forms}=await template(JSZip,bytes);
+  if(mode==='fuel') {
+   rows=rows.filter(r=>r.logs.length || r.prior.some(p=>p.mode==='fuel') || r.claimFuel).map(r=>({...r,
+    original:{...r.original,etcKm:null},final:{...r.final,etcKm:null},trips:[],charge:null,etcAmount:null,claimEtc:false,
+    issues:r.fuelIssues,status:r.fuelStatus,prior:r.prior.filter(p=>p.mode==='fuel')}));
+   errors=[];
+  }
+  if(mode==='etc') rows=rows.filter(r=>r.trips.length || r.prior.some(p=>p.mode==='etc')).map(r=>({...r,
+   original:{...r.original,fuelKm:null},final:{...r.final,fuelKm:null},fuel:null,claimFuel:false,
+   issues:r.etcIssues,status:r.etcStatus,prior:r.prior.filter(p=>p.mode==='etc')}));
   for(const {path,input,mode,last} of forms) zip.file(path,patchForm(input,rows.filter(r=>mode==='fuel'?r.claimFuel:mode==='etc'&&r.claimEtc),last,mode));
   const newPath='xl/worksheets/muTransportAudit.xml';
   if (zip.file(newPath) || rels.includes('rIdMuTransport') || /\bsheetId="9999"/.test(book)) throw Error('核對工作表識別碼重複');
