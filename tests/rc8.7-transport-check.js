@@ -70,6 +70,17 @@ async function checkWorkbook(){
  assert.match(etc,/汽車\/上下班通行費/);
  assert.match(await result.file('xl/worksheets/muTransportAudit.xml').async('string'),/工作日誌與舊報銷地點不同/);
  const separateFuel=await Zip.loadAsync(await workbook(Zip,bytes,october,fuelOnly,['尚未匯入 ETC PDF'],'fuel'));
+ const novemberLogs=[{...log(1,'南區-高雄華邦'),date:'2026-11-02'},{...log(2,'南區-高雄F22P1'),date:'2026-11-05'}];
+ const novemberRates={[key('測試客戶','南區-高雄華邦')]:80,[key('測試客戶','南區-高雄F22P1')]:103};
+ const novemberRows=calculate('2026-11',novemberLogs,{rows:[],errors:[]},novemberRates);
+ const november=await Zip.loadAsync(await workbook(Zip,bytes,'2026-11',novemberRows,[],'fuel'));
+ const roundTrip=await november.file('xl/worksheets/sheet1.xml').async('string');
+ assert.ok(roundTrip.includes('私車公用油資(南辦→高雄華邦→南辦)'));
+ assert.ok(roundTrip.includes('私車公用油資(南辦→高雄F22P1→南辦)'));
+ for (const [row,km,amount] of [[7,80,480],[8,103,618]]) {
+  assert.ok(roundTrip.includes('<c r="D'+row+'"><v>'+km+'</v>'));
+  assert.ok(roundTrip.includes('<c r="F'+row+'"><v>'+amount+'</v>'));
+ }
  assert.match(await separateFuel.file('xl/worksheets/sheet1.xml').async('string'),/SUM\(F7:F23\)<\/f><v>480<\/v>/);
  assert.match(await separateFuel.file('xl/worksheets/sheet3.xml').async('string'),/SUM\(F7:F23\)<\/f><v>0<\/v>/);
  assert.doesNotMatch(await separateFuel.file('xl/worksheets/muTransportAudit.xml').async('string'),/尚未匯入 ETC PDF|無 ETC 紀錄/);

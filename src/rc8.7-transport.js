@@ -133,9 +133,11 @@ const MuTransport = (() => {
    const r=rows[n-7];
    const prior=r?.prior.find(p=>p.mode===mode && p.site && r.final.site.includes(p.site));
    const category=mode==='fuel'?'私車公用油資':'私車公用通行費';
+   const site=r?.final.site.replace(/^(?:北區|中區|南區|東區)\s*[-－–—]\s*/,'');
+   const description=prior?.description || (mode==='fuel'?category+'(南辦→'+site+'→南辦)':category+'（'+r?.final.site+'）');
    const values=r?[
     Math.round((Date.parse(r.date)-Date.UTC(1899,11,30))/86400000),r.final.projectId,
-    prior?.description || category+'（'+r.final.site+'）',claimKm(r),
+    description,claimKm(r),
     null,mode==='fuel'?r.fuel:r.etcAmount,0,mode==='fuel'?r.fuel:r.etcAmount,prior?.remark || (mode==='fuel'?'汽車/上下班':'汽車/上下班通行費')
    ]:Array(9).fill(null);
    const found=new Set();
